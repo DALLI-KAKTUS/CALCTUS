@@ -1,0 +1,74 @@
+// CALCTUS tuş takımı: tek kaynak.
+// Simülatör kaplaması, tuş kimlikleri ve ileride PCB tuş matrisi bu dosyadan üretilir.
+//
+// CALCTUS_KEY(kimlik, betik adı, tuş üstü yazı, tür, x, y, w, h)
+//   x, y, w, h: tuş takımının sol üst köşesine göre, 1x pikselde (takım 320 x 374).
+//   Sıra aynı zamanda matris sırasıdır: satır = sıra / 7, sütun = sıra % 7.
+
+// Ekran altı menü tuşları
+CALCTUS_KEY(F1, "F1", "F1", Soft, 0, 0, 50, 28)
+CALCTUS_KEY(F2, "F2", "F2", Soft, 54, 0, 50, 28)
+CALCTUS_KEY(F3, "F3", "F3", Soft, 108, 0, 50, 28)
+CALCTUS_KEY(F4, "F4", "F4", Soft, 162, 0, 50, 28)
+CALCTUS_KEY(F5, "F5", "F5", Soft, 216, 0, 50, 28)
+CALCTUS_KEY(F6, "F6", "F6", Soft, 270, 0, 50, 28)
+
+// Gezinme ve sistem
+CALCTUS_KEY(Home, "HOME", "⌂", Nav, 0, 38, 50, 28)
+CALCTUS_KEY(Mod, "MOD", "mod", Nav, 54, 38, 50, 28)
+CALCTUS_KEY(Up, "UP", "▲", Nav, 135, 38, 50, 28)
+CALCTUS_KEY(Back, "BACK", "↩", Nav, 216, 38, 50, 28)
+CALCTUS_KEY(Power, "POWER", "güç", Nav, 270, 38, 50, 28)
+CALCTUS_KEY(Left, "LEFT", "◀", Nav, 81, 70, 50, 28)
+CALCTUS_KEY(Ok, "OK", "OK", Nav, 135, 70, 50, 28)
+CALCTUS_KEY(Right, "RIGHT", "▶", Nav, 189, 70, 50, 28)
+CALCTUS_KEY(Ctrl, "CTRL", "ctrl", Nav, 0, 102, 50, 28)
+CALCTUS_KEY(Fn, "FN", "fn", Nav, 54, 102, 50, 28)
+CALCTUS_KEY(Down, "DOWN", "▼", Nav, 135, 102, 50, 28)
+
+// İşlev tuşları
+CALCTUS_KEY(Shift, "SHIFT", "shift", Func, 0, 140, 50, 28)
+CALCTUS_KEY(Alpha, "ALPHA", "alpha", Func, 54, 140, 50, 28)
+CALCTUS_KEY(Xnt, "XNT", "x,n,t", Func, 108, 140, 50, 28)
+CALCTUS_KEY(Var, "VAR", "var", Func, 162, 140, 50, 28)
+CALCTUS_KEY(Toolbox, "TOOLBOX", "araç", Func, 216, 140, 50, 28)
+CALCTUS_KEY(Backspace, "BACKSPACE", "⌫", Func, 270, 140, 50, 28)
+
+CALCTUS_KEY(Exp, "EXP", "eˣ", Func, 0, 172, 50, 28)
+CALCTUS_KEY(Ln, "LN", "ln", Func, 54, 172, 50, 28)
+CALCTUS_KEY(Log, "LOG", "log", Func, 108, 172, 50, 28)
+CALCTUS_KEY(Imag, "I", "i", Func, 162, 172, 50, 28)
+CALCTUS_KEY(Comma, "COMMA", ",", Func, 216, 172, 50, 28)
+CALCTUS_KEY(Pow, "POW", "xʸ", Func, 270, 172, 50, 28)
+
+CALCTUS_KEY(Sin, "SIN", "sin", Func, 0, 204, 50, 28)
+CALCTUS_KEY(Cos, "COS", "cos", Func, 54, 204, 50, 28)
+CALCTUS_KEY(Tan, "TAN", "tan", Func, 108, 204, 50, 28)
+CALCTUS_KEY(Pi, "PI", "π", Func, 162, 204, 50, 28)
+CALCTUS_KEY(Sqrt, "SQRT", "√", Func, 216, 204, 50, 28)
+CALCTUS_KEY(Square, "SQUARE", "x²", Func, 270, 204, 50, 28)
+
+// Sayılar ve işlemler
+CALCTUS_KEY(N7, "7", "7", Num, 0, 242, 60, 30)
+CALCTUS_KEY(N8, "8", "8", Num, 65, 242, 60, 30)
+CALCTUS_KEY(N9, "9", "9", Num, 130, 242, 60, 30)
+CALCTUS_KEY(LParen, "(", "(", Op, 195, 242, 60, 30)
+CALCTUS_KEY(RParen, ")", ")", Op, 260, 242, 60, 30)
+
+CALCTUS_KEY(N4, "4", "4", Num, 0, 276, 60, 30)
+CALCTUS_KEY(N5, "5", "5", Num, 65, 276, 60, 30)
+CALCTUS_KEY(N6, "6", "6", Num, 130, 276, 60, 30)
+CALCTUS_KEY(Mul, "*", "×", Op, 195, 276, 60, 30)
+CALCTUS_KEY(Div, "/", "÷", Op, 260, 276, 60, 30)
+
+CALCTUS_KEY(N1, "1", "1", Num, 0, 310, 60, 30)
+CALCTUS_KEY(N2, "2", "2", Num, 65, 310, 60, 30)
+CALCTUS_KEY(N3, "3", "3", Num, 130, 310, 60, 30)
+CALCTUS_KEY(Plus, "+", "+", Op, 195, 310, 60, 30)
+CALCTUS_KEY(Minus, "-", "−", Op, 260, 310, 60, 30)
+
+CALCTUS_KEY(N0, "0", "0", Num, 0, 344, 60, 30)
+CALCTUS_KEY(Dot, ".", ".", Num, 65, 344, 60, 30)
+CALCTUS_KEY(EE, "EE", "EE", Num, 130, 344, 60, 30)
+CALCTUS_KEY(Ans, "ANS", "ans", Op, 195, 344, 60, 30)
+CALCTUS_KEY(Exe, "EXE", "EXE", Exe, 260, 344, 60, 30)

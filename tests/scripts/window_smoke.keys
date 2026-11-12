@@ -1,0 +1,8 @@
+# Pencereli modun kısa denemesi: pencere açılır, bir tuşa basılır, kapanır.
+wait 500
+down 7
+wait 300
+shot-device window_smoke.png
+up 7
+wait 200
+quit

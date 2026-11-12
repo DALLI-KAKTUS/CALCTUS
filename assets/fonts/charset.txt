@@ -1,0 +1,23 @@
+# Yazı tiplerine ASCII'ye (U+0020..U+007E) ek olarak girecek karakterler.
+# '#' ile başlayan satırlar yorumdur. Boşluklar yok sayılır.
+
+# Türkçe
+ÇĞİÖŞÜçğıöşüâîû
+
+# İşlemler ve matematik
+×÷−±·√∛π∞≈≠≤≥∫∑∏∂∆∇∈∉∩∪°′″‰
+
+# Yunan harfleri
+αβγδεζηθικλμνξοπρστυφχψωΓΔΘΛΞΠΣΦΨΩ
+
+# Üst ve alt simgeler, kesirler
+⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻ⁿˣʸ₀₁₂₃₄₅₆₇₈₉½¼¾
+
+# Oklar ve tuş simgeleri
+←→↑↓↔↩↵⇧⌂⌫⏎▲▼◀▶
+
+# Biçimler ve işaretler
+●○■□▮▯✓✗…–—‘’“”«»•
+
+# Para
+€£₺
