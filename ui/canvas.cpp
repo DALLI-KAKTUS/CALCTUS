@@ -114,6 +114,36 @@ int Canvas::text_width(std::string_view s, const Font& font) {
   return width;
 }
 
+int Canvas::text_wrapped(Rect box, std::string_view s, const Font& font, Color c) {
+  const int space = text_width(" ", font);
+  int x = box.x, y = box.y;
+  while (!s.empty()) {
+    if (s[0] == '\n') {
+      x = box.x;
+      y += font.line_height;
+      s.remove_prefix(1);
+      continue;
+    }
+    if (s[0] == ' ') {
+      x += space;
+      s.remove_prefix(1);
+      continue;
+    }
+    size_t n = 0;
+    while (n < s.size() && s[n] != ' ' && s[n] != '\n') ++n;
+    const std::string_view word = s.substr(0, n);
+    const int w = text_width(word, font);
+    if (x > box.x && x + w > box.right()) {
+      x = box.x;
+      y += font.line_height;
+    }
+    text(x, y, word, font, c);
+    x += w;
+    s.remove_prefix(n);
+  }
+  return y + font.line_height - box.y;
+}
+
 void Canvas::text_in(Rect box, std::string_view s, const Font& font, Color c, Align align) {
   const int width = text_width(s, font);
   int x = box.x;

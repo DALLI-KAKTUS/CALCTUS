@@ -42,6 +42,10 @@ bool keys_wait(KeyEvent& out, uint32_t timeout_ms);
 // Açılıştan beri geçen süre (ms). Taşar; fark alınarak kullanılır.
 uint32_t millis();
 
+// --- Pil -----------------------------------------------------------------
+int battery_percent();  // 0..100
+bool battery_charging();
+
 // --- Sistem --------------------------------------------------------------
 // Ana döngü bitmeli mi? Cihazda hep false; simülatörde pencere kapanınca true.
 bool should_exit();

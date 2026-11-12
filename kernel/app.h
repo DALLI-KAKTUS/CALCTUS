@@ -1,4 +1,4 @@
-// Uygulama arayüzü ve ana döngü.
+// Uygulama arayüzü.
 #pragma once
 
 #include <cstdint>
@@ -8,33 +8,38 @@
 
 namespace calctus {
 
+// Ekranın altındaki F1..F6 çubuğunun yazıları. Boş bırakılan hücre boş görünür.
+struct SoftKeys {
+  const char* label[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+};
+
 class App {
  public:
+  virtual const char* title() const = 0;
+
   virtual void on_open() {}
-  virtual void on_key(const KeyEvent&) {}
+  virtual void on_close() {}
+
+  // Tuş işlendiyse true. İşlenmeyen Geri tuşu ana ekrana döner.
+  virtual bool on_key(const KeyEvent&) { return false; }
+
   // tick_interval_ms() sıfır değilse bu aralıkla çağrılır.
-  virtual void on_tick(uint32_t /*now_ms*/) {}
-  virtual void draw(ui::Canvas& canvas) = 0;
-
-  // 0: zamanlayıcı yok. Uygulama yalnız tuşla uyanır; cihaz o sırada uyur.
+  // 0: zamanlayıcı yok; uygulama yalnız tuşla uyanır, cihaz o sırada uyur.
   virtual uint32_t tick_interval_ms() const { return 0; }
+  virtual void on_tick(uint32_t /*now_ms*/) {}
 
-  void request_redraw() { redraw_ = true; }
-  bool take_redraw() {
-    const bool r = redraw_;
-    redraw_ = false;
-    return r;
-  }
+  // İçerik alanını çizer. Kırpma bölgesi sistem tarafından ayarlanmıştır;
+  // yalnız geçersiz kılınan bölge gerçekten boyanır.
+  virtual void draw(ui::Canvas& canvas, Rect area) = 0;
+
+  virtual void soft_keys(SoftKeys&) const {}
+
+  // true ise Ana ekran ve Güç tuşları da uygulamaya gider (tuş testi için).
+  virtual bool captures_system_keys() const { return false; }
 
  protected:
   ~App() = default;
-
- private:
-  bool redraw_ = true;
 };
-
-// Uygulamayı çalıştırır; platform çıkış isteyene kadar dönmez.
-int run(App& app);
 
 // Sistemin giriş noktası. Simülatörde main(), cihazda app_main() çağırır.
 int boot();

@@ -8,11 +8,33 @@ Başka bir hesap makinesi yazılımının çatalı ya da kopyası değildir.
 
 ## Durum
 
-**S0 İskelet** tamam: depo, derleme ortamı, donanım soyutlama katmanı (HAL), çizim
-çekirdeği, yazı tipleri, simülatör penceresi, tuş betiği, penceresiz mod ve ekran
-karşılaştırma testi. Açılışta tuş testi uygulaması çalışır.
+| Aşama | Durum |
+|---|---|
+| S0 İskelet | tamam |
+| S1 Arayüz kiti | tamam (bu dal: `s1-arayuz-kiti`) |
+| S2 Hesaplama | sırada |
 
-Sıradaki aşama S1: arayüz kiti ve ana ekran.
+**S1 ile gelenler**
+
+- Sistem: durum çubuğu (başlık, açı birimi, pil), içerik alanı, F1–F6 menü çubuğu,
+  tuş yönlendirme, basılı tutunca tekrar, açılır pencereler, bildirimler.
+- Bileşenler: liste, tablo, onay penceresi, seçim listesi, kaydırıcı, anahtar.
+- Uygulamalar: ana ekran, Ayarlar (tema, parlaklık, açı birimi, sayı biçimi,
+  hakkında), Bileşenler (kitin vitrini), Tuş testi.
+- Ekrana yalnız değişen bölge çizilir ve gönderilir.
+
+Ana ekranda soluk görünen uygulamalar henüz yazılmadı; açılınca "yakında" der.
+Ayarlar şimdilik yalnız bellekte durur (kalıcı saklama depolama servisiyle gelecek).
+
+**Cihaz tuşları**
+
+| Tuş | İşlev |
+|---|---|
+| Ok tuşları, OK / EXE | Gezinme, seçme |
+| ↩ (geri) | Bir önceki sayfa; uygulamanın ilk sayfasında ana ekran |
+| ⌂ | Ana ekran |
+| güç | Ekranı kapat / aç |
+| F1–F6 | Ekranın altındaki menü çubuğu |
 
 ## Çalıştırma
 
@@ -51,9 +73,9 @@ Penceresiz modda zaman sanaldır; betikler anında ve her seferinde aynı sonuç
 
 ```
 hal/include/calctus/   HAL sözleşmesi, tuş tanımları (keymap.def), temel tipler
-kernel/                uygulama arayüzü, ana döngü, açılış
-ui/                    çizim (Canvas), yazı tipleri
-apps/                  uygulamalar (şimdilik: keytest)
+kernel/                sistem (ana döngü, ekran düzeni, tuş yönlendirme), uygulama arayüzü, ayarlar
+ui/                    çizim (Canvas), tema, yazı tipleri, bileşenler (widgets/)
+apps/                  uygulamalar (home, settings, gallery, keytest)
 platform/sim/          masaüstü simülatörü (SDL2) — HAL'in masaüstü gerçeklemesi
 platform/esp32/        ESP-IDF gerçeklemesi (donanım aşamasında)
 assets/                yazı tipi karakter listesi
@@ -70,8 +92,9 @@ tests/                 tuş betikleri ve kayıtlı ekran görüntüleri
    yalnız `platform/sim` içinde kullanılabilir. `tools/check_portable.py` bunu her
    test çalışmasında denetler; ortak kod ayrıca `-fno-exceptions -fno-rtti` ile
    derlenir.
-3. **Ekrana yalnız değişen bölge gönderilir** (`hal::display_push`). Cihazda her
-   piksel SPI üzerinden gider.
+3. **Ekrana yalnız değişen bölge gönderilir.** Uygulamalar `System::invalidate`
+   ile bölge bildirir; sistem yalnız orayı çizip `hal::display_push` ile gönderir.
+   Cihazda her piksel SPI üzerinden gider.
 4. **Bekleme HAL'de yapılır** (`hal::keys_wait`). Cihazda işlemci orada uyur.
 5. **Tuş takımının tek kaynağı `keymap.def`.** Simülatör kaplaması, tuş kimlikleri
    ve ileride PCB tuş matrisi oradan üretilir.

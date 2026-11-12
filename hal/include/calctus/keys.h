@@ -43,6 +43,7 @@ struct KeyEvent {
   Key key = Key::None;
   bool down = false;
   uint32_t time_ms = 0;
+  bool repeat = false;  // basılı tutma tekrarı (çekirdek üretir)
 };
 
 }  // namespace calctus

@@ -116,10 +116,19 @@ void draw_skin() {
                     8, rgb(8, 8, 8));
   for (int y = 0; y < hal::kScreenHeight; ++y) {
     Color* dst = g.skin + (kScreenY + y) * kDevW + kScreenX;
+    const Color* src = g.panel + y * hal::kScreenWidth;
     if (g.backlight == 0) {
       std::memset(dst, 0, hal::kScreenWidth * sizeof(Color));
+    } else if (g.backlight == 255) {
+      std::memcpy(dst, src, hal::kScreenWidth * sizeof(Color));
     } else {
-      std::memcpy(dst, g.panel + y * hal::kScreenWidth, hal::kScreenWidth * sizeof(Color));
+      // Arka ışık kısıldıkça panel kararır.
+      const int k = g.backlight + 1;
+      for (int x = 0; x < hal::kScreenWidth; ++x) {
+        const Color p = src[x];
+        dst[x] = static_cast<Color>(((((p >> 11) & 0x1F) * k >> 8) << 11) |
+                                    ((((p >> 5) & 0x3F) * k >> 8) << 5) | ((p & 0x1F) * k >> 8));
+      }
     }
   }
 
@@ -467,6 +476,7 @@ void usage() {
       "  --shot DOSYA         çıkışta ekran görüntüsü (320x240 PNG)\n"
       "  --device-shot DOSYA  çıkışta cihaz görüntüsü (kaplama + ekran)\n"
       "  --scale N            pencere ölçeği (ör. 1, 1.5, 2)\n"
+      "  --battery N          bildirilecek pil yüzdesi (varsayılan 87)\n"
       "\n"
       "betik komutları: key AD | down AD | up AD | wait MS | shot DOSYA |\n"
       "                 shot-device DOSYA | quit\n"
@@ -495,6 +505,8 @@ bool configure(int argc, char** argv, int& exit_code) {
       g.opt.device_shot = v;
     } else if (a == "--scale" && value(v)) {
       g.opt.scale = std::atof(v.c_str());
+    } else if (a == "--battery" && value(v)) {
+      g.opt.battery = std::atoi(v.c_str());
     } else if (a == "--help" || a == "-h") {
       usage();
       return false;
@@ -587,6 +599,10 @@ bool keys_wait(KeyEvent& out, uint32_t timeout_ms) {
 }
 
 uint32_t millis() { return sim::now(); }
+
+int battery_percent() { return g.opt.battery < 0 ? 0 : g.opt.battery > 100 ? 100 : g.opt.battery; }
+
+bool battery_charging() { return false; }
 
 bool should_exit() { return g.exit; }
 

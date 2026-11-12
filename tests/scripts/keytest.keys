@@ -1,11 +1,15 @@
-# Tuş testi: 55 tuşun hepsine sırayla basar.
-# Görüntüler: açılış, bir tuş basılıyken, koyu tema, hepsi tamamlanınca.
+# Tuş testi: 55 tuşun hepsine basar, sonra Ana ekran tuşuna iki kez basıp çıkar.
 wait 100
-shot keytest_01_acilis.png
+key DOWN
+key DOWN
+key DOWN
+key RIGHT
+key OK
+shot 01_acilis.png
 down EXE
 wait 50
-shot keytest_02_basili.png
-shot-device keytest_02_cihaz.png
+shot 02_basili.png
+shot-device 02_cihaz.png
 up EXE
 wait 50
 key F1
@@ -15,6 +19,7 @@ key F4
 key F5
 key F6
 key HOME
+key MOD
 key UP
 key BACK
 key POWER
@@ -62,8 +67,8 @@ key .
 key EE
 key ANS
 wait 3000
-shot keytest_03_mod_haric.png
-key MOD
+shot 03_tamam.png
+key HOME
+key HOME
 wait 100
-shot keytest_04_tamam_koyu.png
-shot-device keytest_04_cihaz.png
+shot 04_cikis.png

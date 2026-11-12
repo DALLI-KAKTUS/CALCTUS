@@ -3,6 +3,6 @@ sim-data/
 .direnv/
 result
 *.png
-!tests/golden/*.png
+!tests/golden/**/*.png
 .DS_Store
 compile_commands.json

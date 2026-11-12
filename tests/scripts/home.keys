@@ -1,0 +1,15 @@
+# Ana ekran: gezinme, yakında bildirimi, kaydırma.
+wait 100
+shot 01_acilis.png
+key RIGHT
+key RIGHT
+key DOWN
+shot 02_gezinme.png
+key OK
+shot 03_yakinda.png
+wait 2000
+shot 04_bildirim_gitti.png
+key DOWN
+key DOWN
+shot 05_kaydirma.png
+shot-device 05_cihaz.png

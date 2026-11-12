@@ -11,6 +11,7 @@ struct Options {
   std::string shot;         // çıkışta ekran görüntüsü (320x240)
   std::string device_shot;  // çıkışta cihaz görüntüsü (kaplama + ekran)
   double scale = 0;         // pencere ölçeği; 0 = ekrana sığan en büyük
+  int battery = 87;         // HAL'in bildireceği pil yüzdesi
 };
 
 // Komut satırını okur. false dönerse program çıkmalıdır (exit_code ile).

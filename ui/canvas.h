@@ -35,6 +35,9 @@ class Canvas {
   // Metni kutunun içinde yatayda hizalar, dikeyde ortalar.
   void text_in(Rect box, std::string_view s, const Font& font, Color c,
                Align align = Align::Center);
+  // Metni kutunun genişliğine göre satırlara böler ('\n' satır atlatır).
+  // Kullanılan yüksekliği döndürür.
+  int text_wrapped(Rect box, std::string_view s, const Font& font, Color c);
   static int text_width(std::string_view s, const Font& font);
 
   // Son temizlemeden beri çizilen bölge.

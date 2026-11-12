@@ -15,14 +15,21 @@ endif()
 # çalışan şeyler girer: SDL, işletim sistemi başlıkları, istisna ve RTTI yok.
 # tools/check_portable.py bunu her testte denetler.
 add_library(calctus_core STATIC
-  kernel/kernel.cpp
+  kernel/system.cpp
   kernel/keys.cpp
   kernel/boot.cpp
   ui/canvas.cpp
   ui/font.cpp
+  ui/theme.cpp
   ui/fonts/font_sans12.cpp
   ui/fonts/font_sans16.cpp
   ui/fonts/font_sans24.cpp
+  ui/widgets/list.cpp
+  ui/widgets/table.cpp
+  ui/widgets/modal.cpp
+  apps/home/home.cpp
+  apps/settings/settings_app.cpp
+  apps/gallery/gallery.cpp
   apps/keytest/keytest.cpp
 )
 target_include_directories(calctus_core PUBLIC hal/include ${CMAKE_CURRENT_SOURCE_DIR})
@@ -49,11 +56,15 @@ if(CALCTUS_BUILD_SIM)
     COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/check_portable.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-  add_test(NAME keytest_golden
-    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_golden.py
-            $<TARGET_FILE:calctus-sim>
-            ${CMAKE_CURRENT_SOURCE_DIR}/tests/scripts/keytest_all.keys
-            ${CMAKE_CURRENT_SOURCE_DIR}/tests/golden
-            ${CMAKE_CURRENT_BINARY_DIR}/golden-out
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  # tests/scripts altındaki her tuş betiği bir ekran karşılaştırma testidir.
+  file(GLOB CALCTUS_SCRIPTS ${CMAKE_CURRENT_SOURCE_DIR}/tests/scripts/*.keys)
+  foreach(script ${CALCTUS_SCRIPTS})
+    get_filename_component(name ${script} NAME_WE)
+    add_test(NAME golden_${name}
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_golden.py
+              $<TARGET_FILE:calctus-sim> ${script}
+              ${CMAKE_CURRENT_SOURCE_DIR}/tests/golden/${name}
+              ${CMAKE_CURRENT_BINARY_DIR}/golden-out/${name}
+      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  endforeach()
 endif()
