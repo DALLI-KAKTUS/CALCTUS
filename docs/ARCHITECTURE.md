@@ -107,8 +107,9 @@ olgusal verilerden oluşturuldu. MicroPython v1.25.0 commit'i
 
 ## 4. SD, bellek, dosya ve güç modeli
 
-Simülatörde SD kökü çalıştırma dizininde `.calctus-sd/` (repo kökünden
-`./sim` bu dizine girer). ESP FAT microSD'yi SPI3 üzerinden `/sdcard` olarak
+Simülatörde SD kökü çalıştırma dizininde `.calctus-sd/`; `software/sim`
+simülatörü depo kökünde başlattığı için bu, depo kökündeki `.calctus-sd/`
+klasörüdür. ESP FAT microSD'yi SPI3 üzerinden `/sdcard` olarak
 bağlar. FAT önceden hazırlanmalı; montaj başarısızsa otomatik biçimlendirme
 **kesinlikle kapalı**. `sd_refresh()` yeniden bağlanmayı dener. Kart yokken
 SD/Python dosya işlevleri hata verir ama yerel hesap devam eder. NVS kullanıcı

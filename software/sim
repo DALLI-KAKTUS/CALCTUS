@@ -2,8 +2,10 @@
 # Simülatörü derler ve çalıştırır. Örnekler:
 #   ./sim                         pencereyi aç
 #   ./sim --scale 2               iki kat büyük
-#   ./sim --headless --script tests/scripts/keytest_all.keys
+#   ./sim --headless --script software/tests/scripts/keytest.keys
 #   ./sim test                    testleri çalıştır
+# Simülatör depo kökünde çalışır: sanal microSD kökteki .calctus-sd/ klasörüdür,
+# ayarlar .calctus-settings.bin dosyasında. Göreli yollar depo köküne göredir.
 set -eu
 cd "$(dirname "$0")"
 
@@ -13,5 +15,5 @@ if [ "${1:-}" = "test" ]; then
 fi
 
 exec nix develop .. --command sh -c \
-  'cmake -S . -B build -G Ninja >/dev/null && cmake --build build >/dev/null && exec build/calctus-sim "$@"' \
+  'cmake -S . -B build -G Ninja >/dev/null && cmake --build build >/dev/null && cd .. && exec software/build/calctus-sim "$@"' \
   sim "$@"
