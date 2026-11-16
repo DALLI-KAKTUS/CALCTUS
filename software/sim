@@ -8,10 +8,10 @@ set -eu
 cd "$(dirname "$0")"
 
 if [ "${1:-}" = "test" ]; then
-  exec nix develop --command sh -c \
+  exec nix develop .. --command sh -c \
     'cmake -S . -B build -G Ninja >/dev/null && cmake --build build && ctest --test-dir build --output-on-failure'
 fi
 
-exec nix develop --command sh -c \
+exec nix develop .. --command sh -c \
   'cmake -S . -B build -G Ninja >/dev/null && cmake --build build >/dev/null && exec build/calctus-sim "$@"' \
   sim "$@"

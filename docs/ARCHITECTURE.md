@@ -4,6 +4,7 @@
 çalışan işlevlerini, kararlarını ve *henüz yalnız tasarım olan* Pi ekran/ağ
 özelliklerini anlamak için yazılmıştır. `[VAR]` derlenmiş/testli yazılım,
 `[TASARIM]` uygulanmamış hedef, `[KARAR]` kesinleşmesi gereken ayrıntıdır.
+Belgedeki kod yolları deponun `software/` klasörüne göredir.
 `[VAR]` ifadesi fiziksel kartta test edildi anlamına **gelmez**.
 
 **LVGL geçişi (tamam, 16 Kasım 2026):** LVGL v9.4.0 kaynakları

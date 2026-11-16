@@ -1,16 +1,35 @@
+# Derleme çıktıları
 build/
-sim-data/
-.direnv/
 result
-*.png
-!tests/golden/**/*.png
-.DS_Store
+.direnv/
 compile_commands.json
+__pycache__/
+.DS_Store
+
+# Simülatörün çalışma verisi (sanal microSD, ayarlar)
+sim-data/
+.calctus-sd/
 .calctus-*.bin
 .calctus-*.bin.tmp
-/platform/esp32/build/
-/platform/esp32/sdkconfig
-/platform/esp32/sdkconfig.old
-/platform/esp32/managed_components/
-.calctus-sd/
-__pycache__/
+
+# ESP-IDF
+/software/platform/esp32/build/
+/software/platform/esp32/sdkconfig
+/software/platform/esp32/sdkconfig.old
+/software/platform/esp32/managed_components/
+
+# Ekran görüntüleri: yalnız golden testler ve belge/donanım görselleri izlenir
+*.png
+!software/tests/golden/**/*.png
+!docs/**/*.png
+!hardware/**/*.png
+!mechanical/**/*.png
+
+# KiCad yedek ve geçici dosyaları
+*-backups/
+*.kicad_prl
+fp-info-cache
+*.lck
+
+# FreeCAD yedekleri
+*.FCBak
