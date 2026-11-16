@@ -1,0 +1,19 @@
+# RPN: mod, yığına giriş, aritmetik, kopyalama, SWAP ve temizleme.
+key OK
+key MOD
+shot 01_yigin.png
+key 2
+key EXE
+key 3
+key +
+shot 02_toplam.png
+key EXE
+key 4
+key EXE
+shot 03_giris.png
+key F4
+shot 04_swap.png
+key F6
+shot 05_temiz.png
+key MOD
+shot 06_cebirsel.png

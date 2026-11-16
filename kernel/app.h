@@ -15,7 +15,9 @@ struct SoftKeys {
 
 class App {
  public:
+  enum class View : uint8_t { Legacy, Settings, Pi, Elements, Calc, Solver, Graph, Statistics };
   virtual const char* title() const = 0;
+  virtual View view() const { return View::Legacy; }
 
   virtual void on_open() {}
   virtual void on_close() {}

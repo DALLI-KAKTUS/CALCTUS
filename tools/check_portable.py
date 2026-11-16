@@ -12,7 +12,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-CORE_DIRS = ["hal", "kernel", "ui", "math", "services", "apps"]
+CORE_DIRS = ["hal", "kernel", "ui", "math", "services", "apps", "third_party/libbf"]
 SUFFIXES = {".h", ".hpp", ".cpp", ".c", ".def"}
 
 # Başlık -> neden yasak

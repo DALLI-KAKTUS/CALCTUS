@@ -4,7 +4,6 @@
 #pragma once
 
 #include "calctus/keys.h"
-#include "ui/canvas.h"
 #include "ui/widgets/list.h"
 
 namespace calctus::ui {
@@ -12,9 +11,10 @@ namespace calctus::ui {
 class Modal {
  public:
   enum class Result : uint8_t { Stay, Redraw, Close };
+  enum class Kind : uint8_t { Dialog, Picker, Slider };
 
+  virtual Kind kind() const = 0;
   virtual Rect bounds() const = 0;
-  virtual void draw(Canvas& c) const = 0;
   virtual Result on_key(const KeyEvent& ev) = 0;
 
  protected:
@@ -27,10 +27,14 @@ class Dialog final : public Modal {
   using Callback = void (*)(void* ctx, int button);
 
   void setup(const char* title, const char* message, const char* button0, const char* button1,
-             Callback done, void* ctx);
+              Callback done, void* ctx);
+  Kind kind() const override { return Kind::Dialog; }
+  const char* title() const { return title_; }
+  const char* message() const { return message_; }
+  const char* button(int index) const { return buttons_[index]; }
+  int selected() const { return sel_; }
 
   Rect bounds() const override;
-  void draw(Canvas& c) const override;
   Result on_key(const KeyEvent& ev) override;
 
  private:
@@ -48,10 +52,16 @@ class Picker final : public Modal, private ListModel {
   using Callback = void (*)(void* ctx, int index);
 
   void setup(const char* title, const char* const* options, int count, int current,
-             Callback done, void* ctx);
+              Callback done, void* ctx);
+  Kind kind() const override { return Kind::Picker; }
+  const char* title() const { return title_; }
+  const char* option(int index) const { return options_[index]; }
+  int option_count() const { return count_; }
+  int selected() const { return list_.selected(); }
+  int first_visible() const { return list_.first_visible(); }
+  int initial() const { return current_; }
 
   Rect bounds() const override { return bounds_; }
-  void draw(Canvas& c) const override;
   Result on_key(const KeyEvent& ev) override;
 
  private:
@@ -74,10 +84,15 @@ class SliderModal final : public Modal {
   using Callback = void (*)(void* ctx, int value);
 
   void setup(const char* title, int value, int min, int max, int step, const char* unit,
-             Callback changed, void* ctx);
+              Callback changed, void* ctx);
+  Kind kind() const override { return Kind::Slider; }
+  const char* title() const { return title_; }
+  const char* unit() const { return unit_; }
+  int value() const { return value_; }
+  int minimum() const { return min_; }
+  int maximum() const { return max_; }
 
   Rect bounds() const override;
-  void draw(Canvas& c) const override;
   Result on_key(const KeyEvent& ev) override;
 
  private:

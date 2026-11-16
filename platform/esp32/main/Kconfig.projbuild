@@ -1,0 +1,73 @@
+menu "CALCTUS board wiring (sample defaults are NOT a PCB pinout)"
+    config CALCTUS_LCD_SCLK
+        int "GMT020 ST7789 SPI clock GPIO (module SCL)"
+        default 12
+    config CALCTUS_LCD_MOSI
+        int "GMT020 ST7789 SPI MOSI GPIO (module SDA)"
+        default 11
+    config CALCTUS_LCD_CS
+        int "GMT020 ST7789 chip select GPIO"
+        default 10
+    config CALCTUS_LCD_DC
+        int "GMT020 ST7789 D/C GPIO"
+        default 9
+    config CALCTUS_LCD_RST
+        int "GMT020 ST7789 reset GPIO"
+        default 8
+    config CALCTUS_LCD_BL
+        int "GMT020 backlight PWM GPIO (-1: no exposed BL pin, e.g. some 7P modules)"
+        default -1
+    config CALCTUS_LCD_SWAP_XY
+        bool "Rotate GMT020 240x320 portrait panel to 320x240 landscape"
+        default y
+    config CALCTUS_LCD_X_GAP
+        int "GMT020 ST7789 horizontal RAM offset (verify with actual revision)"
+        default 0
+    config CALCTUS_LCD_Y_GAP
+        int "GMT020 ST7789 vertical RAM offset (verify with actual revision)"
+        default 0
+    config CALCTUS_LCD_MIRROR_X
+        bool "Mirror X"
+        default n
+    config CALCTUS_LCD_MIRROR_Y
+        bool "Mirror Y"
+        default n
+    config CALCTUS_I2C_SDA
+        int "I2C SDA GPIO (external pull-up required)"
+        default 4
+    config CALCTUS_I2C_SCL
+        int "I2C SCL GPIO (external pull-up required)"
+        default 5
+    config CALCTUS_KEY_IRQ
+        int "TCA8418 active-low interrupt GPIO (-1: polling)"
+        default 6
+    config CALCTUS_CHARGE_GPIO
+        int "Charger active-low status GPIO (-1: unavailable)"
+        default -1
+    config CALCTUS_SD_SCLK
+        int "microSD SPI3 clock GPIO"
+        default 15
+    config CALCTUS_SD_MOSI
+        int "microSD SPI3 MOSI GPIO"
+        default 14
+    config CALCTUS_SD_MISO
+        int "microSD SPI3 MISO GPIO"
+        default 13
+    config CALCTUS_SD_CS
+        int "microSD chip select GPIO"
+        default 16
+    config CALCTUS_SD_CD
+        int "microSD card detect GPIO (-1: unavailable)"
+        default -1
+    config CALCTUS_PI_UART
+        bool "Enable optional Pi Zero 2 W UART link (set PCB GPIOs first)"
+        default n
+    config CALCTUS_PI_TX
+        int "Pi UART TX GPIO (ESP -> Pi)"
+        depends on CALCTUS_PI_UART
+        default 17
+    config CALCTUS_PI_RX
+        int "Pi UART RX GPIO (Pi -> ESP)"
+        depends on CALCTUS_PI_UART
+        default 18
+endmenu

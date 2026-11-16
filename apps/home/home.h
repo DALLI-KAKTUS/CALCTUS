@@ -11,6 +11,8 @@ class HomeApp final : public App {
   bool on_key(const KeyEvent& ev) override;
   void draw(ui::Canvas& c, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
+  int selected() const { return sel_; }
+  int top_row() const { return top_row_; }
 
  private:
   static constexpr int kCols = 4;

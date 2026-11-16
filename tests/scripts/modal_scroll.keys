@@ -1,0 +1,23 @@
+# LVGL seçim penceresi: yedinci satıra kaydır, seç, kapat ve yeniden aç.
+key DOWN
+key DOWN
+key DOWN
+key OK
+key DOWN
+key DOWN
+key DOWN
+key DOWN
+key OK
+key DOWN
+key DOWN
+key DOWN
+key DOWN
+key DOWN
+key DOWN
+shot 01_kaydirma.png
+key OK
+shot 02_secildi.png
+key OK
+shot 03_yeniden_ac.png
+key BACK
+shot 04_iptal.png

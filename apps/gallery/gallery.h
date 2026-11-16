@@ -24,7 +24,7 @@ class GalleryApp final : public App, private ui::ListModel {
     int count() const override { return 40; }
     void item(int index, ui::ListItem& out) const override;
     mutable char label[24] = {};
-    mutable char value[24] = {};
+    mutable char value[32] = {};
   };
 
   struct PowersModel final : ui::TableModel {

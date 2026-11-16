@@ -36,6 +36,7 @@ class ListView {
   Rect bounds() const { return bounds_; }
 
   int selected() const { return sel_; }
+  int first_visible() const { return top_; }
   void select(int index);
 
   // Yukarı/aşağı seçimi taşır; OK ya da EXE etkinleştirir.

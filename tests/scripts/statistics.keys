@@ -1,0 +1,21 @@
+# Tek değişkenli istatistik: veri, özet, dağılım, aralık, geri alma.
+key DOWN
+key OK
+shot 01_acilis.png
+key 2
+key EXE
+key 4
+key EXE
+key 6
+key EXE
+shot 02_veriler.png
+key F3
+shot 03_ortalama.png
+key F4
+shot 04_sapma.png
+key F5
+shot 05_aralik.png
+key F2
+shot 06_geri.png
+key F6
+shot 07_temiz.png

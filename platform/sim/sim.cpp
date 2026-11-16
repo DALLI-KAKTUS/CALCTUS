@@ -9,12 +9,15 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <dirent.h>
 #include <fstream>
 #include <sstream>
+#include <sys/stat.h>
 #include <vector>
 
 #include "calctus/hal.h"
 #include "platform/sim/png.h"
+#include "services/pi_link.h"
 #include "ui/canvas.h"
 
 namespace calctus::sim {
@@ -46,6 +49,7 @@ struct State {
   Options opt;
 
   Color fb[kScreenPixels];     // uygulamanın çizdiği bellek
+  Color legacy_fb[kScreenPixels]; // LVGL canvas kaynak tamponu
   Color panel[kScreenPixels];  // panele gönderilmiş olan (ekranda görünen)
   Color skin[kDevW * kDevH];   // cihaz görünümü
   uint8_t backlight = 255;
@@ -387,6 +391,9 @@ Key map_char(char ch) {
     case '(': return Key::LParen;
     case ')': return Key::RParen;
     case '^': return Key::Pow;
+    case 'x': case 'X': return Key::Xnt;
+    case 'p': case 'P': return Key::Pi;
+    case 'a': case 'A': return Key::Ans;
     default: return Key::None;
   }
 }
@@ -552,6 +559,7 @@ void init() {
 }
 
 Color* framebuffer() { return g.fb; }
+Color* legacy_framebuffer() { return g.legacy_fb; }
 
 void display_push(Rect area) {
   area = intersect(area, make_rect(0, 0, kScreenWidth, kScreenHeight));
@@ -603,6 +611,173 @@ uint32_t millis() { return sim::now(); }
 int battery_percent() { return g.opt.battery < 0 ? 0 : g.opt.battery > 100 ? 100 : g.opt.battery; }
 
 bool battery_charging() { return false; }
+
+namespace {
+constexpr const char* kSdRoot = ".calctus-sd";
+
+bool sd_filename(const char* name) {
+  if (!name || !*name) return false;
+  size_t i = 0;
+  for (; i < sizeof(FileInfo::name) && name[i]; ++i) {
+    const char c = name[i];
+    if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+          (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.')) return false;
+  }
+  return i && i < sizeof(FileInfo::name) &&
+         std::strcmp(name, ".") && std::strcmp(name, "..");
+}
+
+bool sd_path(const char* name, char (&path)[96], bool temp = false) {
+  return sd_filename(name) &&
+         std::snprintf(path, sizeof path, "%s/%s%s", kSdRoot, name, temp ? ".tmp" : "") <
+             static_cast<int>(sizeof path);
+}
+}  // namespace
+
+bool sd_ready() {
+  if (mkdir(kSdRoot, 0700) != 0) {
+    struct stat s{};
+    if (stat(kSdRoot, &s) != 0 || !S_ISDIR(s.st_mode)) return false;
+  }
+  return true;
+}
+
+bool sd_refresh() { return sd_ready(); }
+
+int files_list(FileInfo* out, int capacity) {
+  if (!out || capacity < 0 || !sd_ready()) return -1;
+  DIR* dir = opendir(kSdRoot);
+  if (!dir) return -1;
+  int count = 0;
+  while (dirent* entry = readdir(dir)) {
+    if (!sd_filename(entry->d_name) || entry->d_name[0] == '.' ||
+        count >= capacity) continue;
+    char path[96];
+    if (!sd_path(entry->d_name, path)) continue;
+    struct stat s{};
+    if (lstat(path, &s) != 0 || !S_ISREG(s.st_mode)) continue;
+    std::memcpy(out[count].name, entry->d_name, std::strlen(entry->d_name) + 1);
+    out[count++].size = s.st_size >= 0 ? static_cast<uint32_t>(s.st_size) : 0;
+  }
+  closedir(dir);
+  return count;
+}
+
+bool file_read(const char* name, char* data, size_t capacity, size_t& length) {
+  length = 0;
+  char path[96];
+  if (!sd_ready() || !data || !capacity || !sd_path(name, path)) return false;
+  struct stat s{};
+  if (lstat(path, &s) || !S_ISREG(s.st_mode) || s.st_size < 0 ||
+      static_cast<uint64_t>(s.st_size) >= capacity) return false;
+  FILE* file = std::fopen(path, "rb");
+  if (!file) return false;
+  length = static_cast<size_t>(s.st_size);
+  const bool ok = std::fread(data, 1, length, file) == length && std::fgetc(file) == EOF;
+  std::fclose(file);
+  if (ok) data[length] = '\0';
+  else length = 0;
+  return ok;
+}
+
+bool file_write(const char* name, const char* data, size_t length) {
+  char path[96], temporary[96];
+  if (!sd_ready() || (!data && length) || !sd_path(name, path) ||
+      !sd_path(name, temporary, true)) return false;
+  FILE* file = std::fopen(temporary, "wb");
+  if (!file) return false;
+  const bool written = std::fwrite(data, 1, length, file) == length;
+  const bool closed = std::fclose(file) == 0;
+  if (written && closed && std::rename(temporary, path) == 0) return true;
+  std::remove(temporary);
+  return false;
+}
+
+bool file_delete(const char* name) {
+  char path[96];
+  return sd_ready() && sd_path(name, path) && std::remove(path) == 0;
+}
+
+bool file_rename(const char* from, const char* to) {
+  char old_path[96], new_path[96];
+  struct stat s{};
+  return sd_ready() && sd_path(from, old_path) && sd_path(to, new_path) &&
+         lstat(old_path, &s) == 0 && S_ISREG(s.st_mode) &&
+         lstat(new_path, &s) != 0 && std::rename(old_path, new_path) == 0;
+}
+
+bool pi_exchange(const uint8_t* tx, size_t tx_length, uint8_t* rx,
+                 size_t capacity, size_t& rx_length, uint32_t) {
+  rx_length = 0;
+  // Default: no hardware. Explicit opt-in models an attached Pi in the UI.
+  if (!std::getenv("CALCTUS_PI_SIM") ||
+      std::strcmp(std::getenv("CALCTUS_PI_SIM"), "1") != 0) return false;
+  pi::Frame request{}, response{};
+  if (!pi::decode(tx, tx_length, request)) return false;
+  response.sequence = request.sequence;
+  response.command = request.command;
+  switch (request.command) {
+    case pi::Command::Ping:
+      response.length = 2; response.payload[0] = 'O'; response.payload[1] = 'K'; break;
+    case pi::Command::Info: {
+      constexpr char label[] = "Pi Zero 2 W (simulator)";
+      response.length = sizeof label - 1;
+      std::memcpy(response.payload, label, response.length);
+      break;
+    }
+    case pi::Command::Square: {
+      if (request.length != 4) return false;
+      uint32_t bits = 0;
+      for (int i = 0; i < 4; ++i) bits |= static_cast<uint32_t>(request.payload[i]) << (8 * i);
+      const int64_t value = static_cast<int32_t>(bits);
+      if (value < -46340 || value > 46340) return false;
+      const uint32_t result = static_cast<uint32_t>(value * value);
+      response.length = 4;
+      for (int i = 0; i < 4; ++i) response.payload[i] = (result >> (8 * i)) & 0xff;
+      break;
+    }
+    default: return false;
+  }
+  rx_length = pi::encode(response, rx, capacity);
+  return rx_length != 0;
+}
+
+namespace {
+bool storage_path(char* path, size_t capacity, const char* key, bool temporary) {
+  if (!key || !*key || std::strlen(key) > 24) return false;
+  for (const char* p = key; *p; ++p) {
+    if (!(*p >= 'a' && *p <= 'z') && !(*p >= '0' && *p <= '9') &&
+        *p != '_' && *p != '-') return false;
+  }
+  return std::snprintf(path, capacity, ".calctus-%s.bin%s", key,
+                       temporary ? ".tmp" : "") < static_cast<int>(capacity);
+}
+}  // namespace
+
+bool storage_read(const char* key, void* data, size_t size) {
+  if (!data || !size) return false;
+  char path[64];
+  if (!storage_path(path, sizeof path, key, false)) return false;
+  FILE* file = std::fopen(path, "rb");
+  if (!file) return false;
+  const bool ok = std::fread(data, 1, size, file) == size && std::fgetc(file) == EOF;
+  std::fclose(file);
+  return ok;
+}
+
+bool storage_write(const char* key, const void* data, size_t size) {
+  if (!data || !size) return false;
+  char path[64], temp[64];
+  if (!storage_path(path, sizeof path, key, false) ||
+      !storage_path(temp, sizeof temp, key, true)) return false;
+  FILE* file = std::fopen(temp, "wb");
+  if (!file) return false;
+  const bool written = std::fwrite(data, 1, size, file) == size;
+  const bool ok = std::fclose(file) == 0 && written;
+  if (ok && std::rename(temp, path) == 0) return true;
+  std::remove(temp);
+  return false;
+}
 
 bool should_exit() { return g.exit; }
 

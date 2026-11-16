@@ -1,0 +1,27 @@
+# LVGL Hesap: koyu tema, uzun ondalık sonuç ve RPN görünümü.
+key DOWN
+key DOWN
+key RIGHT
+key RIGHT
+key RIGHT
+key OK
+key OK
+key DOWN
+key OK
+key BACK
+key UP
+key UP
+key LEFT
+key LEFT
+key LEFT
+key OK
+key 1
+key /
+key 3
+key EXE
+shot 01_uzun_sonuc.png
+key MOD
+shot 02_rpn.png
+key 9
+key EXE
+shot 03_yigin.png

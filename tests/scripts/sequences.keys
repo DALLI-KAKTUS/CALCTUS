@@ -1,0 +1,27 @@
+# Açık ve yinelemeli dizi; ilk indeks penceresi ve hatalı ifade.
+key DOWN
+key RIGHT
+key RIGHT
+key OK
+shot 01_acilis.png
+key F3
+key ANS
+key +
+key XNT
+key F2
+shot 02_yineleme.png
+key F5
+key 2
+key F6
+shot 03_pencere.png
+key F3
+key XNT
+key +
+key F6
+shot 04_hata.png
+key F3
+key XNT
+key SQUARE
+key F1
+wait 2000
+shot 05_acik.png

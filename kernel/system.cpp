@@ -4,6 +4,15 @@
 #include <cstring>
 
 #include "ui/theme.h"
+#include "ui/lvgl_screen.h"
+#include "apps/home/home.h"
+#include "apps/settings/settings_app.h"
+#include "apps/pi/pi.h"
+#include "apps/elements/elements.h"
+#include "apps/calc/calc.h"
+#include "apps/solver/solver.h"
+#include "apps/graph/graph.h"
+#include "apps/statistics/statistics.h"
 
 namespace calctus {
 
@@ -12,6 +21,15 @@ namespace {
 constexpr uint32_t kRepeatDelayMs = 400;
 constexpr uint32_t kRepeatRateMs = 70;
 constexpr uint32_t kToastMs = 1600;
+
+struct StoredSettings {
+  uint8_t version, dark, brightness, angle, format, check;
+};
+
+uint8_t checksum(const StoredSettings& value) {
+  return static_cast<uint8_t>(0xA5 ^ value.version ^ value.dark ^ value.brightness ^
+                              value.angle ^ value.format);
+}
 
 constexpr Rect kScreen = {0, 0, hal::kScreenWidth, hal::kScreenHeight};
 constexpr Rect kStatus = {0, 0, hal::kScreenWidth, System::kStatusH};
@@ -55,7 +73,22 @@ void System::set_apps(const AppEntry* entries, int count, App& home) {
 
 int System::run() {
   hal::init();
-  ui::Canvas canvas(hal::framebuffer(), hal::kScreenWidth, hal::kScreenHeight);
+  StoredSettings stored{};
+  if (hal::storage_read("settings", &stored, sizeof stored) && stored.version == 1 &&
+      stored.check == checksum(stored) && stored.dark <= 1 && stored.brightness <= 100 &&
+      stored.angle <= static_cast<uint8_t>(AngleUnit::Gradian) &&
+      stored.format <= static_cast<uint8_t>(NumberFormat::Scientific)) {
+    settings_.dark = stored.dark != 0;
+    settings_.brightness = stored.brightness;
+    settings_.angle = static_cast<AngleUnit>(stored.angle);
+    settings_.format = static_cast<NumberFormat>(stored.format);
+    saved_settings_ = settings_;
+    saved_settings_valid_ = true;
+  }
+  ui::Canvas canvas(hal::legacy_framebuffer(), hal::kScreenWidth, hal::kScreenHeight);
+  ui::LvglScreen screen;
+  screen.init();
+  lvgl_ = &screen;
   canvas_ = &canvas;
   apply_settings();
   open(*home_);
@@ -63,10 +96,12 @@ int System::run() {
   while (!hal::should_exit()) {
     redraw();
     KeyEvent ev;
-    if (hal::keys_wait(ev, next_timeout(hal::millis()))) dispatch(ev);
+    const uint32_t wait = next_timeout(hal::millis());
+    if (hal::keys_wait(ev, wait < 25 ? wait : 25)) dispatch(ev);
     service_timers(hal::millis());
   }
   canvas_ = nullptr;
+  lvgl_ = nullptr;
   return 0;
 }
 
@@ -112,6 +147,19 @@ bool System::key_down(Key key) const {
 }
 
 void System::apply_settings() {
+  StoredSettings stored{1, static_cast<uint8_t>(settings_.dark), settings_.brightness,
+                        static_cast<uint8_t>(settings_.angle),
+                        static_cast<uint8_t>(settings_.format), 0};
+  stored.check = checksum(stored);
+  if (!saved_settings_valid_ || saved_settings_.dark != settings_.dark ||
+      saved_settings_.brightness != settings_.brightness ||
+      saved_settings_.angle != settings_.angle ||
+      saved_settings_.format != settings_.format) {
+    if (hal::storage_write("settings", &stored, sizeof stored)) {
+      saved_settings_ = settings_;
+      saved_settings_valid_ = true;
+    }
+  }
   const bool theme_changed = ui::dark_theme() != settings_.dark;
   ui::set_dark_theme(settings_.dark);
   if (screen_on_) {
@@ -224,73 +272,89 @@ void System::service_timers(uint32_t now) {
 }
 
 void System::redraw() {
-  if (invalid_.empty() || canvas_ == nullptr) return;
+  if (invalid_.empty() || canvas_ == nullptr) {
+    if (lvgl_) lvgl_->refresh();
+    return;
+  }
   ui::Canvas& c = *canvas_;
   const Rect area = invalid_;
   invalid_ = Rect{};
 
   c.set_clip(area);
-  if (!intersect(area, kStatus).empty()) draw_status(c);
+  const bool native_home = app_ == home_;
+  const auto* settings_app = app_->view() == App::View::Settings ?
+      static_cast<const apps::SettingsApp*>(app_) : nullptr;
+  const bool native_settings = settings_app != nullptr;
+  const auto* pi_app = app_->view() == App::View::Pi ?
+      static_cast<const apps::PiApp*>(app_) : nullptr;
+  const bool native_pi = pi_app != nullptr;
+  const auto* elements_app = app_->view() == App::View::Elements ?
+      static_cast<const apps::ElementsApp*>(app_) : nullptr;
+  const bool native_elements = elements_app != nullptr;
+  const auto* calc_app = app_->view() == App::View::Calc ?
+      static_cast<const apps::CalcApp*>(app_) : nullptr;
+  const bool native_calc = calc_app != nullptr;
+  const auto* solver_app = app_->view() == App::View::Solver ?
+      static_cast<const apps::SolverApp*>(app_) : nullptr;
+  const bool native_solver = solver_app != nullptr;
+  auto* graph_app = app_->view() == App::View::Graph ?
+      static_cast<apps::GraphApp*>(app_) : nullptr;
+  const bool native_graph = graph_app != nullptr;
+  const auto* statistics_app = app_->view() == App::View::Statistics ?
+      static_cast<const apps::StatisticsApp*>(app_) : nullptr;
+  const bool native_statistics = statistics_app != nullptr;
+  lvgl_->show_home(native_home);
+  lvgl_->show_settings(native_settings);
+  lvgl_->show_pi(native_pi);
+  lvgl_->show_elements(native_elements);
+  lvgl_->show_calc(native_calc);
+  lvgl_->show_solver(native_solver);
+  lvgl_->show_graph(native_graph);
+  lvgl_->show_statistics(native_statistics);
+  if (!intersect(area, kStatus).empty())
+    lvgl_->status(app_->title(), angle_label(settings_.angle), hal::battery_percent(),
+                  settings_.dark);
 
   const Rect content = intersect(area, kContent);
   if (!content.empty()) {
-    c.set_clip(content);
-    app_->draw(c, kContent);
-    c.set_clip(area);
+    if (native_home) {
+      const auto* home = static_cast<const apps::HomeApp*>(home_);
+      lvgl_->home(apps_, app_count_, home->selected(), home->top_row());
+    } else if (native_settings) {
+      lvgl_->settings(*settings_app);
+    } else if (native_pi) {
+      lvgl_->pi(*pi_app);
+    } else if (native_elements) {
+      lvgl_->elements(*elements_app);
+    } else if (native_calc) {
+      lvgl_->calc(*calc_app);
+    } else if (native_solver) {
+      lvgl_->solver(*solver_app);
+    } else if (native_graph) {
+      lvgl_->graph(*graph_app);
+    } else if (native_statistics) {
+      lvgl_->statistics(*statistics_app);
+    } else {
+      c.set_clip(content);
+      app_->draw(c, kContent);
+      c.set_clip(area);
+      lvgl_->update_content(content);
+    }
   }
 
-  if (!intersect(area, kSoft).empty()) draw_soft(c);
-  if (modal_ != nullptr) modal_->draw(c);
-  if (toast_active_) draw_toast(c);
+  if (!intersect(area, kSoft).empty()) {
+    SoftKeys keys;
+    app_->soft_keys(keys);
+    bool pressed[6];
+    for (int i = 0; i < 6; ++i) pressed[i] = down_[key_index(Key::F1) + i];
+    lvgl_->soft(keys, pressed);
+  }
+  lvgl_->modal(modal_);
+  lvgl_->toast(toast_, toast_active_);
 
   c.reset_clip();
   c.clear_dirty();
-  hal::display_push(area);
-}
-
-void System::draw_status(ui::Canvas& c) const {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(kStatus, t.accent);
-  c.text_in(make_rect(8, 0, 180, kStatusH), app_->title(), ui::font_sans12, t.on_accent,
-            ui::Align::Left);
-
-  // Pil: gövde + uç, içi doluluk kadar.
-  const int percent = hal::battery_percent();
-  const Rect body = make_rect(hal::kScreenWidth - 30, 5, 20, 10);
-  c.box(body, 2, t.on_accent, t.accent);
-  c.fill_rect(make_rect(body.right(), body.y + 3, 2, 4), t.on_accent);
-  const int fill = (body.w - 4) * percent / 100;
-  if (fill > 0) c.fill_rect(make_rect(body.x + 2, body.y + 2, fill, body.h - 4), t.on_accent);
-
-  c.text_in(make_rect(hal::kScreenWidth - 80, 0, 42, kStatusH), angle_label(settings_.angle),
-            ui::font_sans12, t.on_accent, ui::Align::Right);
-}
-
-void System::draw_soft(ui::Canvas& c) const {
-  const ui::Theme& t = ui::theme();
-  SoftKeys keys;
-  app_->soft_keys(keys);
-
-  c.fill_rect(kSoft, t.bg);
-  c.fill_rect(make_rect(0, kSoft.y, kSoft.w, 1), t.line);
-  for (int i = 0; i < 6; ++i) {
-    const int x0 = i * kSoft.w / 6;
-    const int x1 = (i + 1) * kSoft.w / 6;
-    const Rect cell = make_rect(x0, kSoft.y + 1, x1 - x0, kSoft.h - 1);
-    const bool pressed = down_[key_index(Key::F1) + i];
-    if (pressed) c.fill_rect(cell, t.accent);
-    if (i > 0) c.fill_rect(make_rect(x0, kSoft.y + 4, 1, 12), t.line);
-    if (keys.label[i] != nullptr) {
-      c.text_in(cell, keys.label[i], ui::font_sans12, pressed ? t.on_accent : t.text);
-    }
-  }
-}
-
-void System::draw_toast(ui::Canvas& c) const {
-  const ui::Theme& t = ui::theme();
-  // Ters renkli: zeminden ayrışsın.
-  c.fill_round_rect(toast_rect_, 12, t.text);
-  c.text_in(toast_rect_, toast_, ui::font_sans12, t.bg);
+  lvgl_->refresh();
 }
 
 }  // namespace calctus

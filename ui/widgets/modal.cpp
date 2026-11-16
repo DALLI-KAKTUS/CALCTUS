@@ -1,9 +1,5 @@
 #include "ui/widgets/modal.h"
 
-#include <cstdio>
-
-#include "ui/theme.h"
-
 namespace calctus::ui {
 
 namespace {
@@ -12,15 +8,6 @@ constexpr int kScreenW = 320;
 constexpr int kScreenH = 240;
 
 Rect centered(int w, int h) { return make_rect((kScreenW - w) / 2, (kScreenH - h) / 2, w, h); }
-
-// Pencere gövdesi: kenarlıklı kutu ve başlık. İçerik alanının üst y'sini döndürür.
-int frame(Canvas& c, Rect r, const char* title) {
-  const Theme& t = theme();
-  c.box(r, 8, t.muted, t.surface);
-  c.text_in(make_rect(r.x + 12, r.y + 6, r.w - 24, 18), title, font_sans12, t.accent, Align::Left);
-  c.fill_rect(make_rect(r.x + 10, r.y + 26, r.w - 20, 1), t.line);
-  return r.y + 30;
-}
 
 }  // namespace
 
@@ -38,21 +25,6 @@ void Dialog::setup(const char* title, const char* message, const char* button0,
 }
 
 Rect Dialog::bounds() const { return centered(264, 118); }
-
-void Dialog::draw(Canvas& c) const {
-  const Theme& t = theme();
-  const Rect r = bounds();
-  const int top = frame(c, r, title_);
-  c.text_wrapped(make_rect(r.x + 12, top + 4, r.w - 24, 40), message_, font_sans12, t.text);
-
-  const int bw = (r.w - 36) / 2;
-  for (int i = 0; i < 2; ++i) {
-    const Rect b = make_rect(r.x + 12 + i * (bw + 12), r.bottom() - 34, bw, 24);
-    const bool selected = i == sel_;
-    c.box(b, 6, selected ? t.accent : t.line, selected ? t.accent : t.surface);
-    c.text_in(b, buttons_[i], font_sans12, selected ? t.on_accent : t.text);
-  }
-}
 
 Modal::Result Dialog::on_key(const KeyEvent& ev) {
   if (!ev.down) return Result::Stay;
@@ -100,11 +72,6 @@ void Picker::item(int index, ListItem& out) const {
   out.mark = index == current_ ? ListItem::Mark::Checked : ListItem::Mark::None;
 }
 
-void Picker::draw(Canvas& c) const {
-  frame(c, bounds_, title_);
-  list_.draw(c);
-}
-
 Modal::Result Picker::on_key(const KeyEvent& ev) {
   if (!ev.down) return Result::Stay;
   if (ev.key == Key::Back) return Result::Close;
@@ -135,24 +102,6 @@ void SliderModal::setup(const char* title, int value, int min, int max, int step
 }
 
 Rect SliderModal::bounds() const { return centered(244, 78); }
-
-void SliderModal::draw(Canvas& c) const {
-  const Theme& t = theme();
-  const Rect r = bounds();
-  const int top = frame(c, r, title_);
-
-  char buf[24];
-  std::snprintf(buf, sizeof buf, "%d%s", value_, unit_);
-  c.text_in(make_rect(r.x + 12, r.y + 6, r.w - 24, 18), buf, font_sans12, t.text, Align::Right);
-
-  const Rect track = make_rect(r.x + 16, top + 16, r.w - 32, 8);
-  c.fill_round_rect(track, 4, t.line);
-  const int filled = track.w * (value_ - min_) / (max_ - min_);
-  if (filled > 0) c.fill_round_rect(make_rect(track.x, track.y, filled, track.h), 4, t.accent);
-  const int knob_x = track.x + filled - 7;
-  c.box(make_rect(knob_x < track.x ? track.x : knob_x, track.y - 4, 14, 16), 7, t.accent,
-        t.surface);
-}
 
 Modal::Result SliderModal::on_key(const KeyEvent& ev) {
   if (!ev.down) return Result::Stay;

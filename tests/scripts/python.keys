@@ -1,0 +1,9 @@
+# microSD boşken bile gerçek MicroPython VM örnek kodu yürütür.
+key RIGHT
+key RIGHT
+key OK
+shot 01_bos_liste.png
+key F2
+shot 02_ornek_sonuc.png
+key F6
+shot 03_listeye_don.png

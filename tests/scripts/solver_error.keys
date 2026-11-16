@@ -1,0 +1,12 @@
+# Çözücü: geçersiz katsayı ve LVGL bildirim kapanışı.
+key RIGHT
+key RIGHT
+key RIGHT
+key OK
+key 1
+key /
+key 0
+key EXE
+shot 01_hata.png
+wait 2000
+shot 02_bildirim_gitti.png

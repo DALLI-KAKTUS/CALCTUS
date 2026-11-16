@@ -7,6 +7,8 @@
 #include "kernel/settings.h"
 #include "ui/widgets/modal.h"
 
+namespace calctus::ui { class LvglScreen; }
+
 namespace calctus {
 
 // Ana ekrandaki bir uygulama. app boşsa henüz yazılmamıştır ("yakında").
@@ -59,17 +61,17 @@ class System {
   void set_screen(bool on);
 
   void redraw();
-  void draw_status(ui::Canvas& c) const;
-  void draw_soft(ui::Canvas& c) const;
-  void draw_toast(ui::Canvas& c) const;
 
   const AppEntry* apps_ = nullptr;
   int app_count_ = 0;
   App* home_ = nullptr;
   App* app_ = nullptr;
   ui::Canvas* canvas_ = nullptr;
+  ui::LvglScreen* lvgl_ = nullptr;
   ui::Modal* modal_ = nullptr;
   Settings settings_{};
+  Settings saved_settings_{};
+  bool saved_settings_valid_ = false;
 
   Rect invalid_{};
   bool down_[kKeyCount] = {};

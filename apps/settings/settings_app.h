@@ -10,10 +10,14 @@ namespace calctus::apps {
 class SettingsApp final : public App, private ui::ListModel {
  public:
   const char* title() const override { return page_ == Page::About ? "Hakkında" : "Ayarlar"; }
+  View view() const override { return View::Settings; }
   void on_open() override;
   bool on_key(const KeyEvent& ev) override;
   void draw(ui::Canvas& c, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
+  bool about_page() const { return page_ == Page::About; }
+  int selected_row() const { return list_.selected(); }
+  void row(int index, ui::ListItem& out) const { item(index, out); }
 
  private:
   enum class Page : uint8_t { Main, About };

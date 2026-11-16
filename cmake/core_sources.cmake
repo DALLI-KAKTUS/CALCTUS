@@ -1,0 +1,44 @@
+# Simülatör ve ESP-IDF bileşeni aynı kaynak listesini kullanır.
+# Yol adları depo köküne göredir.
+set(CALCTUS_CORE_SOURCES
+  math/combinatorics.cpp
+  math/eval.cpp
+  math/solver.cpp
+  math/sequence.cpp
+  math/statistics.cpp
+  services/files.cpp
+  services/pi_link.cpp
+  services/micropython/runtime.cpp
+  kernel/system.cpp
+  kernel/keys.cpp
+  kernel/boot.cpp
+  ui/canvas.cpp
+  ui/lvgl_screen.cpp
+  ui/font.cpp
+  ui/theme.cpp
+  ui/fonts/font_sans12.cpp
+  ui/fonts/font_sans16.cpp
+  ui/fonts/font_sans24.cpp
+  ui/widgets/list.cpp
+  ui/widgets/table.cpp
+  ui/widgets/modal.cpp
+  apps/home/home.cpp
+  apps/elements/data.cpp
+  apps/elements/elements.cpp
+  apps/files/files.cpp
+  apps/calc/calc.cpp
+  apps/graph/graph.cpp
+  apps/probability/probability.cpp
+  apps/python/python.cpp
+  apps/pi/pi.cpp
+  apps/solver/solver.cpp
+  apps/sequences/sequences.cpp
+  apps/statistics/statistics.cpp
+  apps/settings/settings_app.cpp
+  apps/gallery/gallery.cpp
+  apps/keytest/keytest.cpp
+)
+set(CALCTUS_LIBBF_SOURCES
+  third_party/libbf/libbf.c
+  third_party/libbf/cutils.c
+)

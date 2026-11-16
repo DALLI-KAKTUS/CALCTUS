@@ -15,6 +15,6 @@ struct Settings {
   NumberFormat format = NumberFormat::Auto;
 };
 
-constexpr const char* kVersion = "0.1 (S1)";
+constexpr const char* kVersion = "0.2 (S2 başlangıç)";
 
 }  // namespace calctus

@@ -5,9 +5,9 @@ namespace calctus::ui {
 namespace {
 
 constexpr Theme kLight = {
-    rgb(244, 241, 234), rgb(255, 255, 255), rgb(30, 36, 32),
-    rgb(112, 120, 114), rgb(201, 196, 184), rgb(47, 143, 91),
-    rgb(255, 255, 255), rgb(212, 234, 221), rgb(170, 174, 168),
+    rgb(246, 249, 247), rgb(255, 255, 255), rgb(29, 41, 34),
+    rgb(95, 113, 102), rgb(214, 225, 216), rgb(47, 143, 91),
+    rgb(255, 255, 255), rgb(217, 237, 224), rgb(155, 168, 159),
 };
 
 constexpr Theme kDark = {
