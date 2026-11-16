@@ -55,6 +55,10 @@ Klavye eşlemesi, tuş betikleri ve cihaz derlemesi:
 
 ## Lisans
 
-Henüz seçilmedi. Önerilen: yazılım için GPLv3, donanım ve mekanik tasarım
-için CERN-OHL-S. Üçüncü taraf kütüphaneler (`software/third_party/`) kendi
-lisanslarıyla gelir: libbf, LVGL ve MicroPython MIT lisanslıdır.
+- Yazılım: **AGPL-3.0-or-later** ([`LICENSE`](LICENSE))
+- Devre, kasa ve 3B modeller: **CERN-OHL-S-2.0** ([`hardware/LICENSE`](hardware/LICENSE), [`mechanical/LICENSE`](mechanical/LICENSE))
+- Belgeler: **CC BY-SA 4.0** ([`docs/LICENSE`](docs/LICENSE))
+
+Üçüncü taraf bileşenler (libbf, LVGL, MicroPython, DejaVu yazı tipi,
+periyodik tablo verisi) kendi lisanslarıyla gelir:
+[`THIRD_PARTY.md`](THIRD_PARTY.md).

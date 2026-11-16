@@ -302,7 +302,7 @@ oluşturur; Gallery kaydırma/seçim akışları da golden testlidir.
 **Alınmış kararlar:** Ortak HAL; yüksek hassasiyet için libbf; kullanıcı
 dosyaları SD'de, NVS ayarlara; sabit MicroPython VM; 118 element; otomatik
 SD format yok; Pi *opsiyonel*, ESP ana sistem; UART yalnız kontrol prototipi.
-CALCTUS ana proje lisansı hâlâ seçilmedi (üçüncü taraf MIT bildirimleri var).
+Lisans: yazılım AGPL-3.0-or-later, devre ve kasa CERN-OHL-S-2.0, belgeler CC BY-SA 4.0; üçüncü taraflar için `THIRD_PARTY.md`.
 
 **Karar gerektirenler:** (1) Pi ekranı için uygulamaya özgü sanal 320×240 UI
 yeterli mi, yoksa HDMI masaüstünün aynısı şart mı? (2) Pi terminali yerel PTY

@@ -1,5 +1,6 @@
 // tools/gen_elements.py tarafından üretildi; el ile değiştirmeyin.
 // Bilgiler: Bowserinator/Periodic-Table-JSON, a78c7a48 (yalnız olgusal alanlar).
+// Veri lisansı: CC BY-SA 3.0 (LICENSES/CC-BY-SA-3.0.txt). Bkz. THIRD_PARTY.md.
 #include "apps/elements/data.h"
 
 #include <cctype>
