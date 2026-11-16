@@ -4,7 +4,6 @@
 
 #include "kernel/system.h"
 #include "services/pi_link.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 void PiApp::on_open() {
@@ -33,24 +32,6 @@ bool PiApp::on_key(const KeyEvent& event) {
   }
   System::get().invalidate_content();
   return true;
-}
-
-void PiApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  c.text(9, 25, "Opsiyonel Pi Zero 2 W / UART", ui::font_sans12, t.muted);
-  c.text(9, 58, connected_ ? "Pi bagli" : "Pi yok: ESP bagimsiz calisir",
-         ui::font_sans16, connected_ ? t.accent : t.text);
-  if (info_[0]) c.text(9, 92, info_, ui::font_sans12, t.text);
-  char line[56];
-  std::snprintf(line, sizeof line, "Uzak hesap: %ld x %ld", static_cast<long>(input_),
-                static_cast<long>(input_));
-  c.text(9, 125, line, ui::font_sans12, t.text);
-  if (calculated_) {
-    std::snprintf(line, sizeof line, "Pi yaniti: %ld", static_cast<long>(result_));
-    c.text(9, 151, line, ui::font_sans16, t.accent);
-  }
-  c.text(9, 194, "Terminal/ekran aktarimi: sonraki asama", ui::font_sans12, t.muted);
 }
 
 void PiApp::soft_keys(SoftKeys& keys) const {

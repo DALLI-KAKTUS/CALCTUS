@@ -18,7 +18,6 @@ class GraphApp final : public App {
   double pixels_per_unit() const { return pixels_per_unit_; }
   void on_open() override;
   bool on_key(const KeyEvent& event) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
  private:

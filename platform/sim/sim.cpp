@@ -49,7 +49,6 @@ struct State {
   Options opt;
 
   Color fb[kScreenPixels];     // uygulamanın çizdiği bellek
-  Color legacy_fb[kScreenPixels]; // LVGL canvas kaynak tamponu
   Color panel[kScreenPixels];  // panele gönderilmiş olan (ekranda görünen)
   Color skin[kDevW * kDevH];   // cihaz görünümü
   uint8_t backlight = 255;
@@ -559,7 +558,6 @@ void init() {
 }
 
 Color* framebuffer() { return g.fb; }
-Color* legacy_framebuffer() { return g.legacy_fb; }
 
 void display_push(Rect area) {
   area = intersect(area, make_rect(0, 0, kScreenWidth, kScreenHeight));

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "kernel/system.h"
+#include "apps/home/home.h"
 #include "apps/settings/settings_app.h"
 #include "apps/pi/pi.h"
 #include "apps/elements/elements.h"
@@ -12,9 +13,16 @@
 #include "apps/solver/solver.h"
 #include "apps/graph/graph.h"
 #include "apps/statistics/statistics.h"
+#include "apps/probability/probability.h"
+#include "apps/sequences/sequences.h"
+#include "apps/python/python.h"
+#include "apps/files/files.h"
+#include "apps/gallery/gallery.h"
+#include "apps/keytest/keytest.h"
 #include "math/eval.h"
 #include "ui/widgets/modal.h"
 #include "ui/font.h"
+#include "ui/lvgl_kit.h"
 
 namespace calctus::ui {
 namespace {
@@ -22,60 +30,6 @@ constexpr int W = hal::kScreenWidth;
 constexpr int H = hal::kScreenHeight;
 // 16 RGB565 lines: a bounded internal buffer, independent of the PSRAM frame.
 alignas(16) uint8_t draw_buffer[W * 16 * 2];
-
-bool glyph_dsc(const lv_font_t* f, lv_font_glyph_dsc_t* out, uint32_t codepoint,
-               uint32_t) {
-  const auto* face = static_cast<const Font*>(f->dsc);
-  const Glyph* glyph = face->find(codepoint);
-  if (!glyph) return false;
-  out->adv_w = glyph->advance;
-  out->box_w = glyph->w;
-  out->box_h = glyph->h;
-  out->ofs_x = glyph->xoff;
-  out->ofs_y = -glyph->yoff - glyph->h;
-  out->stride = 0;
-  out->format = LV_FONT_GLYPH_FORMAT_A4;
-  out->gid.index = static_cast<uint32_t>(glyph - face->glyphs);
-  return true;
-}
-
-const void* glyph_bitmap(lv_font_glyph_dsc_t* dsc, lv_draw_buf_t* buf) {
-  const auto* face = static_cast<const Font*>(dsc->resolved_font->dsc);
-  const Glyph& glyph = face->glyphs[dsc->gid.index];
-  const uint8_t* src = face->bitmap + glyph.offset;
-  if (dsc->req_raw_bitmap) return src;
-  if (!buf) return nullptr;
-  const int stride = lv_draw_buf_width_to_stride(glyph.w, LV_COLOR_FORMAT_A8);
-  for (int y = 0; y < glyph.h; ++y) {
-    for (int x = 0; x < glyph.w; ++x) {
-      const int p = y * glyph.w + x;
-      const uint8_t nibble = (p & 1) ? (src[p / 2] & 15) : (src[p / 2] >> 4);
-      buf->data[y * stride + x] = nibble * 17;
-    }
-  }
-  lv_draw_buf_flush_cache(buf, nullptr);
-  return buf;
-}
-
-lv_font_t* font_for(const Font& source, lv_font_t& face) {
-  if (!face.dsc) {
-    face.get_glyph_dsc = glyph_dsc;
-    face.get_glyph_bitmap = glyph_bitmap;
-    face.line_height = source.line_height;
-    face.base_line = face.line_height - source.ascent;
-    face.dsc = &source;
-  }
-  return &face;
-}
-
-lv_font_t* face12() { static lv_font_t f{}; return font_for(font_sans12, f); }
-lv_font_t* face16() { static lv_font_t f{}; return font_for(font_sans16, f); }
-lv_font_t* face24() { static lv_font_t f{}; return font_for(font_sans24, f); }
-
-lv_color_t color(Color rgb565) {
-  return lv_color_make((rgb565 >> 11) * 255 / 31,
-                       ((rgb565 >> 5) & 63) * 255 / 63, (rgb565 & 31) * 255 / 31);
-}
 
 void flush(lv_display_t* display, const lv_area_t* area, uint8_t* pixels) {
   // LVGL RGB565 is little endian; the HAL takes native RGB565 words and
@@ -90,41 +44,9 @@ void flush(lv_display_t* display, const lv_area_t* area, uint8_t* pixels) {
   lv_display_flush_ready(display);
 }
 
-void rect(lv_obj_t* obj, int x, int y, int w, int h, Color bg, int radius) {
-  lv_obj_set_pos(obj, x, y);
-  lv_obj_set_size(obj, w, h);
-  lv_obj_set_style_bg_color(obj, color(bg), 0);
-  lv_obj_set_style_bg_opa(obj, LV_OPA_COVER, 0);
-  lv_obj_set_style_radius(obj, radius, 0);
-  lv_obj_set_style_border_width(obj, 0, 0);
-  lv_obj_set_style_pad_all(obj, 0, 0);
-  lv_obj_clear_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
-}
-
-lv_obj_t* label(lv_obj_t* parent, const char* text, Color fg) {
-  auto* obj = lv_label_create(parent);
-  lv_label_set_text(obj, text);
-  lv_obj_set_style_text_color(obj, color(fg), 0);
-  lv_obj_set_style_text_font(obj, face12(), 0);
-  return obj;
-}
-
-// Eski hesap görünümü de en sağdaki rakamları görünür tutuyordu. Uzun sonuçları
-// LVGL etiketi içinde gizlemeden önce aynı davranışı koru.
-const char* visible_tail(const char* text, int width, const Font& font) {
-  while (*text && Canvas::text_width(text, font) > width) ++text;
-  return text;
-}
-
-lv_obj_t* clipped_label(lv_obj_t* parent, const char* text, int width,
-                        const Font& font, Color fg) {
-  if (Canvas::text_width(text, font) <= width) return label(parent, text, fg);
-  const char* tail = visible_tail(text, width - Canvas::text_width("…", font), font);
-  char shown[160];
-  std::snprintf(shown, sizeof shown, "…%s", tail);
-  return label(parent, shown, fg);
-}
 } // namespace
+
+using namespace lvk;
 
 void LvglScreen::init() {
   lv_init();
@@ -137,35 +59,12 @@ void LvglScreen::init() {
 
   auto* screen = lv_screen_active();
   rect(screen, 0, 0, W, H, rgb(244, 241, 234), 0);
-  content_ = lv_canvas_create(screen);
-  lv_canvas_set_buffer(content_, hal::legacy_framebuffer() + System::kStatusH * W,
-                       W, System::kContent.h, LV_COLOR_FORMAT_RGB565);
-  lv_obj_set_pos(content_, 0, System::kStatusH);
-  lv_obj_clear_flag(content_, LV_OBJ_FLAG_SCROLLABLE);
-
-  home_ = lv_obj_create(screen);
-  rect(home_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  settings_ = lv_obj_create(screen);
-  rect(settings_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(settings_, LV_OBJ_FLAG_HIDDEN);
-  pi_ = lv_obj_create(screen);
-  rect(pi_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(pi_, LV_OBJ_FLAG_HIDDEN);
-  elements_ = lv_obj_create(screen);
-  rect(elements_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(elements_, LV_OBJ_FLAG_HIDDEN);
-  calc_ = lv_obj_create(screen);
-  rect(calc_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(calc_, LV_OBJ_FLAG_HIDDEN);
-  solver_ = lv_obj_create(screen);
-  rect(solver_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(solver_, LV_OBJ_FLAG_HIDDEN);
-  graph_ = lv_obj_create(screen);
-  rect(graph_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(graph_, LV_OBJ_FLAG_HIDDEN);
-  statistics_ = lv_obj_create(screen);
-  rect(statistics_, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
-  lv_obj_add_flag(statistics_, LV_OBJ_FLAG_HIDDEN);
+  // Her uygulama görünümünün kendi kabı var; yalnız açık olanınki görünür.
+  for (auto*& view : views_) {
+    view = lv_obj_create(screen);
+    rect(view, 0, System::kStatusH, W, System::kContent.h, rgb(244, 241, 234), 0);
+    lv_obj_add_flag(view, LV_OBJ_FLAG_HIDDEN);
+  }
   header_ = lv_obj_create(screen);
   rect(header_, 0, 0, W, System::kStatusH, rgb(47, 143, 91), 0);
   title_ = label(header_, "CALCTUS", rgb(255, 255, 255));
@@ -189,70 +88,30 @@ void LvglScreen::init() {
   lv_obj_add_flag(notice_, LV_OBJ_FLAG_HIDDEN);
 }
 
-void LvglScreen::update_content(Rect dirty) {
-  const Rect r = intersect(dirty, System::kContent);
-  if (r.empty()) return;
-  const lv_area_t area{r.x, r.y, r.right() - 1, r.bottom() - 1};
-  lv_obj_invalidate_area(content_, &area);
-}
-
-void LvglScreen::show_home(bool show) {
-  if (show) lv_obj_remove_flag(home_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(home_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_settings(bool show) {
-  if (show) lv_obj_remove_flag(settings_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(settings_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_pi(bool show) {
-  if (show) lv_obj_remove_flag(pi_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(pi_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_elements(bool show) {
-  if (show) lv_obj_remove_flag(elements_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(elements_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_calc(bool show) {
-  if (show) lv_obj_remove_flag(calc_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(calc_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_solver(bool show) {
-  if (show) lv_obj_remove_flag(solver_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(solver_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_graph(bool show) {
-  if (show) lv_obj_remove_flag(graph_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(graph_, LV_OBJ_FLAG_HIDDEN);
-}
-
-void LvglScreen::show_statistics(bool show) {
-  if (show) lv_obj_remove_flag(statistics_, LV_OBJ_FLAG_HIDDEN);
-  else lv_obj_add_flag(statistics_, LV_OBJ_FLAG_HIDDEN);
+void LvglScreen::show(App::View view) {
+  for (int i = 0; i < App::kViewCount; ++i) {
+    if (i == static_cast<int>(view)) lv_obj_remove_flag(views_[i], LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_add_flag(views_[i], LV_OBJ_FLAG_HIDDEN);
+  }
 }
 
 void LvglScreen::statistics(const apps::StatisticsApp& app) {
-  lv_obj_clean(statistics_);
+  lv_obj_clean(root(App::View::Statistics));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(246, 249, 247);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(29, 41, 34);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(95, 113, 102);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(statistics_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Statistics), color(bg), 0);
 
   char text[64];
   std::snprintf(text, sizeof text, "VERİ SETİ   %d / 32", app.count());
-  auto* heading = label(statistics_, text, muted);
+  auto* heading = label(root(App::View::Statistics), text, muted);
   lv_obj_set_pos(heading, 10, 5);
 
   const int page = app.page_index();
   if (page == 0) {
-    auto* card = lv_obj_create(statistics_);
+    auto* card = lv_obj_create(root(App::View::Statistics));
     rect(card, 8, 25, 304, 119, surface, 10);
     if (!app.count()) {
       auto* empty = label(card, "Sayı yaz, EXE ile ekle", muted);
@@ -274,7 +133,7 @@ void LvglScreen::statistics(const apps::StatisticsApp& app) {
       }
     }
   } else {
-    auto* card = lv_obj_create(statistics_);
+    auto* card = lv_obj_create(root(App::View::Statistics));
     rect(card, 8, 25, 304, 119, surface, 10);
     if (!app.count()) {
       auto* empty = label(card, "Önce veri ekle", muted);
@@ -316,9 +175,9 @@ void LvglScreen::statistics(const apps::StatisticsApp& app) {
     }
   }
 
-  auto* caption = label(statistics_, "YENİ DEĞER", muted);
+  auto* caption = label(root(App::View::Statistics), "YENİ DEĞER", muted);
   lv_obj_set_pos(caption, 10, 151);
-  auto* entry = lv_obj_create(statistics_);
+  auto* entry = lv_obj_create(root(App::View::Statistics));
   rect(entry, 8, 170, 304, 25, surface, 7);
   auto* value = clipped_label(entry, *app.input() ? app.input() : "0", 280,
                               font_sans16, *app.input() ? ink : muted);
@@ -328,23 +187,23 @@ void LvglScreen::statistics(const apps::StatisticsApp& app) {
 
 void LvglScreen::graph(apps::GraphApp& app) {
   app.ensure_sampled();
-  lv_obj_clean(graph_);
+  lv_obj_clean(root(App::View::Graph));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(246, 249, 247);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(29, 41, 34);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(95, 113, 102);
   const Color line_color = dark_ ? rgb(54, 72, 61) : rgb(214, 225, 216);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(graph_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Graph), color(bg), 0);
 
-  auto* formula = label(graph_, "f(x) =", muted);
+  auto* formula = label(root(App::View::Graph), "f(x) =", muted);
   lv_obj_set_pos(formula, 10, 3);
-  auto* expr = clipped_label(graph_, app.expression(), 258, font_sans12, ink);
+  auto* expr = clipped_label(root(App::View::Graph), app.expression(), 258, font_sans12, ink);
   lv_obj_align(expr, LV_ALIGN_TOP_RIGHT, -10, 3);
 
   // The original plot uses screen coordinates (8,37)..(312,172). Keep the
   // exact 4px sample pitch, 135px height, panning and discontinuity rules.
-  auto* plot = lv_obj_create(graph_);
+  auto* plot = lv_obj_create(root(App::View::Graph));
   rect(plot, 8, 17, 304, 135, surface, 7);
   lv_obj_set_style_border_width(plot, 1, 0);
   lv_obj_set_style_border_color(plot, color(line_color), 0);
@@ -390,24 +249,24 @@ void LvglScreen::graph(apps::GraphApp& app) {
     lv_obj_center(invalid);
   }
 
-  auto* hint = label(graph_, "Yön: kaydır   F3/F4: yakınlaştır", muted);
+  auto* hint = label(root(App::View::Graph), "Yön: kaydır   F3/F4: yakınlaştır", muted);
   lv_obj_set_pos(hint, 10, 156);
-  auto* input = lv_obj_create(graph_);
+  auto* input = lv_obj_create(root(App::View::Graph));
   rect(input, 8, 174, 304, 21, surface, 6);
   auto* current = clipped_label(input, app.expression(), 280, font_sans12, ink);
   lv_obj_align(current, LV_ALIGN_RIGHT_MID, -8, 0);
 }
 
 void LvglScreen::solver(const apps::SolverApp& app) {
-  lv_obj_clean(solver_);
+  lv_obj_clean(root(App::View::Solver));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(246, 249, 247);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(29, 41, 34);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(95, 113, 102);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(solver_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Solver), color(bg), 0);
 
-  auto* equation = lv_obj_create(solver_);
+  auto* equation = lv_obj_create(root(App::View::Solver));
   rect(equation, 8, 5, 304, 31, dark_ ? rgb(37, 75, 55) : rgb(217, 237, 224), 8);
   auto* equation_text = label(equation, "ax² + bx + c = 0", accent);
   lv_obj_set_style_text_font(equation_text, face16(), 0);
@@ -415,7 +274,7 @@ void LvglScreen::solver(const apps::SolverApp& app) {
 
   const char* names[] = {"a", "b", "c"};
   for (int i = 0; i < 3; ++i) {
-    auto* field = lv_obj_create(solver_);
+    auto* field = lv_obj_create(root(App::View::Solver));
     rect(field, 8, 40 + i * 30, 304, 27,
          i == app.selected() ? (dark_ ? rgb(37, 75, 55) : rgb(217, 237, 224)) : surface, 7);
     if (i == app.selected()) {
@@ -431,7 +290,7 @@ void LvglScreen::solver(const apps::SolverApp& app) {
     lv_obj_align(value, LV_ALIGN_RIGHT_MID, -9, 0);
   }
 
-  auto* answer = lv_obj_create(solver_);
+  auto* answer = lv_obj_create(root(App::View::Solver));
   rect(answer, 8, 135, 304, 59, surface, 9);
   if (!app.has_result()) {
     auto* prompt = label(answer, "EXE ile çöz", muted);
@@ -477,20 +336,20 @@ void LvglScreen::solver(const apps::SolverApp& app) {
 }
 
 void LvglScreen::calc(const apps::CalcApp& app) {
-  lv_obj_clean(calc_);
+  lv_obj_clean(root(App::View::Calc));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(246, 249, 247);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(29, 41, 34);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(95, 113, 102);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(calc_, color(bg), 0);
-  auto* heading = label(calc_, app.rpn_mode() ? "YIĞIN  ·  RPN" : "GEÇMİŞ", muted);
+  lv_obj_set_style_bg_color(root(App::View::Calc), color(bg), 0);
+  auto* heading = label(root(App::View::Calc), app.rpn_mode() ? "YIĞIN  ·  RPN" : "GEÇMİŞ", muted);
   lv_obj_set_pos(heading, 10, 7);
 
   if (app.rpn_mode()) {
     for (int i = 0; i < app.stack_size(); ++i) {
       const int y = 23 + (3 - i) * 29;
-      auto* row = lv_obj_create(calc_);
+      auto* row = lv_obj_create(root(App::View::Calc));
       rect(row, 8, y, 304, 26, i == app.stack_size() - 1 ?
            (dark_ ? rgb(37, 75, 55) : rgb(217, 237, 224)) : surface, 7);
       char index[16];
@@ -505,7 +364,7 @@ void LvglScreen::calc(const apps::CalcApp& app) {
   } else {
     for (int i = app.history_count() - 1; i >= 0; --i) {
       const int y = 23 + (app.history_count() - 1 - i) * 38;
-      auto* row = lv_obj_create(calc_);
+      auto* row = lv_obj_create(root(App::View::Calc));
       rect(row, 8, y, 304, 35, surface, 7);
       auto* expr = clipped_label(row, app.history_expression(i), 280, font_sans12, muted);
       lv_obj_align(expr, LV_ALIGN_TOP_RIGHT, -10, 3);
@@ -516,7 +375,7 @@ void LvglScreen::calc(const apps::CalcApp& app) {
     }
   }
 
-  auto* input_card = lv_obj_create(calc_);
+  auto* input_card = lv_obj_create(root(App::View::Calc));
   rect(input_card, 8, 147, 304, 46, surface, 9);
   auto* caption = label(input_card, app.rpn_mode() ? "GİRİŞ" : "İFADE", accent);
   lv_obj_set_pos(caption, 10, 4);
@@ -527,20 +386,20 @@ void LvglScreen::calc(const apps::CalcApp& app) {
 }
 
 void LvglScreen::elements(const apps::ElementsApp& app) {
-  lv_obj_clean(elements_);
+  lv_obj_clean(root(App::View::Elements));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(246, 249, 247);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(29, 41, 34);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(95, 113, 102);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(elements_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Elements), color(bg), 0);
 
-  auto* heading = label(elements_, app.list_mode() ? "PERİYODİK LİSTE" : "PERİYODİK TABLO", muted);
+  auto* heading = label(root(App::View::Elements), app.list_mode() ? "PERİYODİK LİSTE" : "PERİYODİK TABLO", muted);
   lv_obj_set_pos(heading, 10, 8);
   char text[64];
   if (app.search()[0]) std::snprintf(text, sizeof text, "Git: %s", app.search());
   else std::snprintf(text, sizeof text, "No: %d", app.selected_number());
-  auto* search = label(elements_, text, accent);
+  auto* search = label(root(App::View::Elements), text, accent);
   lv_obj_align(search, LV_ALIGN_TOP_RIGHT, -10, 8);
 
   if (app.list_mode()) {
@@ -550,7 +409,7 @@ void LvglScreen::elements(const apps::ElementsApp& app) {
       const int number = first + i;
       const apps::Element& element = *apps::element_by_number(number);
       const bool selected = number == app.selected_number();
-      auto* row = lv_obj_create(elements_);
+      auto* row = lv_obj_create(root(App::View::Elements));
       rect(row, 8, 28 + i * 21, 304, 20,
            selected ? (dark_ ? rgb(37, 75, 55) : rgb(217, 237, 224)) : surface, 5);
       std::snprintf(text, sizeof text, "%3d   %-3s  %s", number, element.symbol, element.name);
@@ -561,7 +420,7 @@ void LvglScreen::elements(const apps::ElementsApp& app) {
   }
 
   const apps::Element& element = *apps::element_by_number(app.selected_number());
-  auto* card = lv_obj_create(elements_);
+  auto* card = lv_obj_create(root(App::View::Elements));
   rect(card, 8, 31, 304, 94, surface, 12);
   auto* symbol_box = lv_obj_create(card);
   rect(symbol_box, 8, 8, 74, 78, accent, 9);
@@ -578,7 +437,7 @@ void LvglScreen::elements(const apps::ElementsApp& app) {
   auto* mass = label(card, text, muted);
   lv_obj_set_pos(mass, 94, 57);
 
-  auto* properties = lv_obj_create(elements_);
+  auto* properties = lv_obj_create(root(App::View::Elements));
   rect(properties, 8, 128, 304, 54, surface, 10);
   const char* phase = element.phase == 'G' ? "Gaz" : element.phase == 'L' ? "Sıvı" : "Katı";
   char fields[4][32];
@@ -593,20 +452,20 @@ void LvglScreen::elements(const apps::ElementsApp& app) {
     lv_obj_set_pos(field, 12 + (i % 2) * 152, 7 + (i / 2) * 30);
   }
   if (app.selected_number() >= 104) {
-    auto* note = label(elements_, "* Faz tahmini olabilir", muted);
+    auto* note = label(root(App::View::Elements), "* Faz tahmini olabilir", muted);
     lv_obj_set_pos(note, 12, 184);
   }
 }
 
 void LvglScreen::pi(const apps::PiApp& app) {
-  lv_obj_clean(pi_);
+  lv_obj_clean(root(App::View::Pi));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(244, 241, 234);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(30, 36, 32);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(100, 117, 106);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(pi_, color(bg), 0);
-  auto* banner = lv_obj_create(pi_);
+  lv_obj_set_style_bg_color(root(App::View::Pi), color(bg), 0);
+  auto* banner = lv_obj_create(root(App::View::Pi));
   rect(banner, 8, 7, 304, 65, app.connected() ?
        (dark_ ? rgb(35, 77, 54) : rgb(214, 239, 223)) : surface, 12);
   auto* title = label(banner, app.connected() ? "Pi bağlı" : "Pi bağlı değil", app.connected() ? accent : ink);
@@ -615,7 +474,7 @@ void LvglScreen::pi(const apps::PiApp& app) {
   auto* hint = label(banner, app.connected() ? "UART kontrol kanalı hazır" :
                      "ESP32-S3 bağımsız çalışır", muted);
   lv_obj_set_pos(hint, 13, 38);
-  auto* card = lv_obj_create(pi_);
+  auto* card = lv_obj_create(root(App::View::Pi));
   rect(card, 8, 80, 304, 100, surface, 12);
   auto* caption = label(card, "UZAK HESAP", accent);
   lv_obj_set_pos(caption, 13, 9);
@@ -629,20 +488,20 @@ void LvglScreen::pi(const apps::PiApp& app) {
   else std::snprintf(line, sizeof line, "%s", app.info()[0] ? app.info() : "↑↓ sayı  ·  F3 hesapla");
   auto* result = label(card, line, app.calculated() ? accent : muted);
   lv_obj_set_pos(result, 13, 76);
-  auto* note = label(pi_, "Pi ekranı ve Wi-Fi paylaşımı henüz tasarım", muted);
+  auto* note = label(root(App::View::Pi), "Pi ekranı ve Wi-Fi paylaşımı henüz tasarım", muted);
   lv_obj_set_pos(note, 12, 185);
 }
 
 void LvglScreen::settings(const apps::SettingsApp& app) {
-  lv_obj_clean(settings_);
+  lv_obj_clean(root(App::View::Settings));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(244, 241, 234);
   const Color surface = dark_ ? rgb(28, 34, 31) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(230, 237, 232) : rgb(30, 36, 32);
   const Color muted = dark_ ? rgb(140, 150, 144) : rgb(100, 117, 106);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(settings_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Settings), color(bg), 0);
   if (app.about_page()) {
-    auto* card = lv_obj_create(settings_);
+    auto* card = lv_obj_create(root(App::View::Settings));
     rect(card, 9, 9, 302, 177, surface, 12);
     auto* name = label(card, "CALCTUS", accent);
     lv_obj_set_style_text_font(name, face24(), 0);
@@ -656,7 +515,7 @@ void LvglScreen::settings(const apps::SettingsApp& app) {
   for (int i = 0; i < 5; ++i) {
     ui::ListItem item{};
     app.row(i, item);
-    auto* row = lv_obj_create(settings_);
+    auto* row = lv_obj_create(root(App::View::Settings));
     rect(row, 8, 7 + i * 37, 304, 33,
          i == app.selected_row() ? (dark_ ? rgb(37, 75, 55) : rgb(212, 234, 221)) : surface, 8);
     if (i == app.selected_row()) {
@@ -671,15 +530,15 @@ void LvglScreen::settings(const apps::SettingsApp& app) {
 }
 
 void LvglScreen::home(const AppEntry* apps, int count, int selected, int top_row) {
-  lv_obj_clean(home_);
+  lv_obj_clean(root(App::View::Home));
   const Color bg = dark_ ? rgb(18, 22, 20) : rgb(244, 241, 234);
   const Color surface = dark_ ? rgb(34, 46, 39) : rgb(255, 255, 255);
   const Color ink = dark_ ? rgb(231, 239, 233) : rgb(29, 41, 34);
   const Color accent = dark_ ? rgb(76, 195, 138) : rgb(47, 143, 91);
-  lv_obj_set_style_bg_color(home_, color(bg), 0);
+  lv_obj_set_style_bg_color(root(App::View::Home), color(bg), 0);
   for (int i = top_row * 4; i < count && i < (top_row + 3) * 4; ++i) {
     const int col = i % 4, row = i / 4 - top_row;
-    auto* tile = lv_obj_create(home_);
+    auto* tile = lv_obj_create(root(App::View::Home));
     rect(tile, 4 + col * 80, 4 + row * 66, 72, 60,
          i == selected ? (dark_ ? rgb(38, 72, 54) : rgb(213, 235, 221)) : surface, 9);
     if (i == selected) {
@@ -695,6 +554,16 @@ void LvglScreen::home(const AppEntry* apps, int count, int selected, int top_row
     lv_obj_set_width(name, 70);
     lv_obj_set_style_text_align(name, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_pos(name, 1, 40);
+  }
+
+  // Kaydırma göstergesi: satır başına bir nokta, görünen satırlar vurgulu.
+  const int total_rows = (count + 3) / 4;
+  if (total_rows > 3) {
+    for (int row = 0; row < total_rows; ++row) {
+      const bool shown = row >= top_row && row < top_row + 3;
+      box(root(App::View::Home), make_rect(316, 6 + row * 8, 3, 5),
+          shown ? accent : (dark_ ? rgb(52, 62, 56) : rgb(214, 225, 216)), 1);
+    }
   }
 }
 
@@ -813,6 +682,31 @@ void LvglScreen::modal(const Modal* current) {
       lv_obj_set_style_border_color(thumb, color(surface), 0);
       break;
     }
+  }
+}
+
+void LvglScreen::content(App& app, const AppEntry* apps, int count) {
+  // Her görünüm uygulamanın o anki durumundan baştan kurulur.
+  switch (app.view()) {
+    case App::View::Home: {
+      const auto& home_app = static_cast<const apps::HomeApp&>(app);
+      home(apps, count, home_app.selected(), home_app.top_row());
+      break;
+    }
+    case App::View::Settings: settings(static_cast<const apps::SettingsApp&>(app)); break;
+    case App::View::Pi: pi(static_cast<const apps::PiApp&>(app)); break;
+    case App::View::Elements: elements(static_cast<const apps::ElementsApp&>(app)); break;
+    case App::View::Calc: calc(static_cast<const apps::CalcApp&>(app)); break;
+    case App::View::Solver: solver(static_cast<const apps::SolverApp&>(app)); break;
+    case App::View::Graph: graph(static_cast<apps::GraphApp&>(app)); break;
+    case App::View::Statistics: statistics(static_cast<const apps::StatisticsApp&>(app)); break;
+    case App::View::Probability:
+      probability(static_cast<const apps::ProbabilityApp&>(app)); break;
+    case App::View::Sequences: sequences(static_cast<const apps::SequencesApp&>(app)); break;
+    case App::View::Python: python(static_cast<const apps::PythonApp&>(app)); break;
+    case App::View::Files: files(static_cast<const apps::FilesApp&>(app)); break;
+    case App::View::Gallery: gallery(static_cast<const apps::GalleryApp&>(app)); break;
+    case App::View::KeyTest: keytest(static_cast<const apps::KeyTestApp&>(app)); break;
   }
 }
 

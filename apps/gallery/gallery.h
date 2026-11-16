@@ -11,13 +11,18 @@ namespace calctus::apps {
 class GalleryApp final : public App, private ui::ListModel {
  public:
   const char* title() const override;
+  View view() const override { return View::Gallery; }
   void on_open() override;
   bool on_key(const KeyEvent& ev) override;
-  void draw(ui::Canvas& c, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
- private:
   enum class Page : uint8_t { Menu, LongList, Table, Fonts };
+  Page page() const { return page_; }
+  const ui::ListView& menu() const { return menu_; }
+  const ui::ListView& long_list() const { return long_list_; }
+  const ui::TableView& table() const { return table_; }
+
+ private:
   enum Row { kLongList, kTable, kFonts, kDialog, kPicker, kSlider, kSwitch, kToast, kRowCount };
 
   struct LongModel final : ui::ListModel {

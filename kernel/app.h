@@ -4,7 +4,7 @@
 #include <cstdint>
 
 #include "calctus/keys.h"
-#include "ui/canvas.h"
+#include "calctus/types.h"
 
 namespace calctus {
 
@@ -15,9 +15,16 @@ struct SoftKeys {
 
 class App {
  public:
-  enum class View : uint8_t { Legacy, Settings, Pi, Elements, Calc, Solver, Graph, Statistics };
+  // Uygulamanın LVGL görünümü. Görünümü ui/lvgl_screen kurar; uygulama
+  // durumunu sunar ve değişince System::invalidate ile yeniden çizdirir.
+  enum class View : uint8_t {
+    Home, Settings, Pi, Elements, Calc, Solver, Graph, Statistics,
+    Probability, Sequences, Python, Files, Gallery, KeyTest,
+  };
+  static constexpr int kViewCount = static_cast<int>(View::KeyTest) + 1;
+
   virtual const char* title() const = 0;
-  virtual View view() const { return View::Legacy; }
+  virtual View view() const = 0;
 
   virtual void on_open() {}
   virtual void on_close() {}
@@ -29,10 +36,6 @@ class App {
   // 0: zamanlayıcı yok; uygulama yalnız tuşla uyanır, cihaz o sırada uyur.
   virtual uint32_t tick_interval_ms() const { return 0; }
   virtual void on_tick(uint32_t /*now_ms*/) {}
-
-  // İçerik alanını çizer. Kırpma bölgesi sistem tarafından ayarlanmıştır;
-  // yalnız geçersiz kılınan bölge gerçekten boyanır.
-  virtual void draw(ui::Canvas& canvas, Rect area) = 0;
 
   virtual void soft_keys(SoftKeys&) const {}
 

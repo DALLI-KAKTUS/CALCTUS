@@ -3,16 +3,9 @@
 #include <cstdio>
 #include <cstring>
 
-#include "ui/theme.h"
+#include "ui/canvas.h"
 #include "ui/lvgl_screen.h"
-#include "apps/home/home.h"
-#include "apps/settings/settings_app.h"
-#include "apps/pi/pi.h"
-#include "apps/elements/elements.h"
-#include "apps/calc/calc.h"
-#include "apps/solver/solver.h"
-#include "apps/graph/graph.h"
-#include "apps/statistics/statistics.h"
+#include "ui/theme.h"
 
 namespace calctus {
 
@@ -85,11 +78,9 @@ int System::run() {
     saved_settings_ = settings_;
     saved_settings_valid_ = true;
   }
-  ui::Canvas canvas(hal::legacy_framebuffer(), hal::kScreenWidth, hal::kScreenHeight);
   ui::LvglScreen screen;
   screen.init();
   lvgl_ = &screen;
-  canvas_ = &canvas;
   apply_settings();
   open(*home_);
 
@@ -100,7 +91,6 @@ int System::run() {
     if (hal::keys_wait(ev, wait < 25 ? wait : 25)) dispatch(ev);
     service_timers(hal::millis());
   }
-  canvas_ = nullptr;
   lvgl_ = nullptr;
   return 0;
 }
@@ -272,76 +262,19 @@ void System::service_timers(uint32_t now) {
 }
 
 void System::redraw() {
-  if (invalid_.empty() || canvas_ == nullptr) {
-    if (lvgl_) lvgl_->refresh();
+  if (lvgl_ == nullptr) return;
+  if (invalid_.empty()) {
+    lvgl_->refresh();
     return;
   }
-  ui::Canvas& c = *canvas_;
   const Rect area = invalid_;
   invalid_ = Rect{};
 
-  c.set_clip(area);
-  const bool native_home = app_ == home_;
-  const auto* settings_app = app_->view() == App::View::Settings ?
-      static_cast<const apps::SettingsApp*>(app_) : nullptr;
-  const bool native_settings = settings_app != nullptr;
-  const auto* pi_app = app_->view() == App::View::Pi ?
-      static_cast<const apps::PiApp*>(app_) : nullptr;
-  const bool native_pi = pi_app != nullptr;
-  const auto* elements_app = app_->view() == App::View::Elements ?
-      static_cast<const apps::ElementsApp*>(app_) : nullptr;
-  const bool native_elements = elements_app != nullptr;
-  const auto* calc_app = app_->view() == App::View::Calc ?
-      static_cast<const apps::CalcApp*>(app_) : nullptr;
-  const bool native_calc = calc_app != nullptr;
-  const auto* solver_app = app_->view() == App::View::Solver ?
-      static_cast<const apps::SolverApp*>(app_) : nullptr;
-  const bool native_solver = solver_app != nullptr;
-  auto* graph_app = app_->view() == App::View::Graph ?
-      static_cast<apps::GraphApp*>(app_) : nullptr;
-  const bool native_graph = graph_app != nullptr;
-  const auto* statistics_app = app_->view() == App::View::Statistics ?
-      static_cast<const apps::StatisticsApp*>(app_) : nullptr;
-  const bool native_statistics = statistics_app != nullptr;
-  lvgl_->show_home(native_home);
-  lvgl_->show_settings(native_settings);
-  lvgl_->show_pi(native_pi);
-  lvgl_->show_elements(native_elements);
-  lvgl_->show_calc(native_calc);
-  lvgl_->show_solver(native_solver);
-  lvgl_->show_graph(native_graph);
-  lvgl_->show_statistics(native_statistics);
+  lvgl_->show(app_->view());
   if (!intersect(area, kStatus).empty())
     lvgl_->status(app_->title(), angle_label(settings_.angle), hal::battery_percent(),
                   settings_.dark);
-
-  const Rect content = intersect(area, kContent);
-  if (!content.empty()) {
-    if (native_home) {
-      const auto* home = static_cast<const apps::HomeApp*>(home_);
-      lvgl_->home(apps_, app_count_, home->selected(), home->top_row());
-    } else if (native_settings) {
-      lvgl_->settings(*settings_app);
-    } else if (native_pi) {
-      lvgl_->pi(*pi_app);
-    } else if (native_elements) {
-      lvgl_->elements(*elements_app);
-    } else if (native_calc) {
-      lvgl_->calc(*calc_app);
-    } else if (native_solver) {
-      lvgl_->solver(*solver_app);
-    } else if (native_graph) {
-      lvgl_->graph(*graph_app);
-    } else if (native_statistics) {
-      lvgl_->statistics(*statistics_app);
-    } else {
-      c.set_clip(content);
-      app_->draw(c, kContent);
-      c.set_clip(area);
-      lvgl_->update_content(content);
-    }
-  }
-
+  if (!intersect(area, kContent).empty()) lvgl_->content(*app_, apps_, app_count_);
   if (!intersect(area, kSoft).empty()) {
     SoftKeys keys;
     app_->soft_keys(keys);
@@ -351,9 +284,6 @@ void System::redraw() {
   }
   lvgl_->modal(modal_);
   lvgl_->toast(toast_, toast_active_);
-
-  c.reset_clip();
-  c.clear_dirty();
   lvgl_->refresh();
 }
 

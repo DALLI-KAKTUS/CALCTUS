@@ -12,7 +12,6 @@ class ElementsApp final : public App {
   bool list_mode() const { return list_; }
   const char* search() const { return search_; }
   bool on_key(const KeyEvent& event) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
  private:

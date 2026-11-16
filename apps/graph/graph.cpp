@@ -7,7 +7,6 @@
 
 #include "kernel/system.h"
 #include "math/eval.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -120,45 +119,6 @@ void GraphApp::sample() {
     if (std::isfinite(py) && py >= kPlot.y && py < kPlot.bottom())
       points_[i] = static_cast<int16_t>(py);
   }
-}
-
-void GraphApp::draw(ui::Canvas& c, Rect area) {
-  if (dirty_) sample();
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  c.text(8, 23, "f(x) =", ui::font_sans12, t.muted);
-  c.text(48, 23, expression_, ui::font_sans12, t.text);
-  c.fill_rect(kPlot, t.surface);
-  c.frame_rect(kPlot, t.line);
-
-  const int axis_x = static_cast<int>(kPlot.x + kPlot.w / 2.0 - cx_ * pixels_per_unit_);
-  const int axis_y = static_cast<int>(kPlot.y + kPlot.h / 2.0 + cy_ * pixels_per_unit_);
-  c.set_clip(kPlot);
-  if (axis_x >= kPlot.x && axis_x < kPlot.right())
-    c.fill_rect(make_rect(axis_x, kPlot.y, 1, kPlot.h), t.line);
-  if (axis_y >= kPlot.y && axis_y < kPlot.bottom())
-    c.fill_rect(make_rect(kPlot.x, axis_y, kPlot.w, 1), t.line);
-
-  for (int i = 0; i < kSamples - 1; ++i) {
-    const int y1 = points_[i], y2 = points_[i + 1];
-    if (y1 < 0 || y2 < 0) continue;
-    const int span = std::abs(y1 - y2);
-    // Asimptotları birleştirme; kopukluklar çizilmez.
-    if (span > kPlot.h / 2) continue;
-    const int x = kPlot.x + i * 4;
-    for (int step = 0; step <= 4; ++step) {
-      const int y = y1 + (y2 - y1) * step / 4;
-      c.fill_rect(make_rect(x + step, y, 2, 2), t.accent);
-    }
-  }
-  c.set_clip(area);
-  if (!valid_) c.text_in(kPlot, "Geçersiz ifade", ui::font_sans12, t.muted);
-  c.text(8, 177, "Yön: kaydır   F3/F4: yakınlaştır", ui::font_sans12, t.muted);
-  c.fill_round_rect(make_rect(6, 194, 308, 20), 4, t.surface);
-  c.set_clip(make_rect(10, 194, 300, 20));
-  const int text_width = ui::Canvas::text_width(expression_, ui::font_sans12);
-  c.text(305 - text_width, 196, expression_, ui::font_sans12, t.text);
-  c.set_clip(area);
 }
 
 void GraphApp::soft_keys(SoftKeys& keys) const {

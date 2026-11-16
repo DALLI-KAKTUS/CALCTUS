@@ -2,10 +2,8 @@
 
 #include <cstdio>
 #include <cstring>
-#include <string_view>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -77,7 +75,7 @@ bool PythonApp::on_key(const KeyEvent& ev) {
         if (output_.text[i] == '\n') ++lines;
       scroll_ += delta;
       if (scroll_ < 0) scroll_ = 0;
-      if (scroll_ > lines - 9) scroll_ = lines > 9 ? lines - 9 : 0;
+      if (scroll_ > lines - kOutputLines) scroll_ = lines > kOutputLines ? lines - kOutputLines : 0;
     } else if (script_count_ > 0) {
       selected_ = (selected_ + script_count_ + delta) % script_count_;
     }
@@ -96,55 +94,6 @@ bool PythonApp::on_key(const KeyEvent& ev) {
       return true;
     default: return false;
   }
-}
-
-void PythonApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  if (!showing_output_) {
-    c.text(8, 25, "MicroPython 1.25 · .py / microSD", ui::font_sans12, t.muted);
-    if (script_count_ < 0) {
-      c.text(12, 70, "microSD bağlı değil", ui::font_sans16, t.text);
-      c.text(12, 105, "F2 ile örnek programı çalıştır", ui::font_sans12, t.muted);
-      return;
-    }
-    if (script_count_ == 0) {
-      c.text(12, 70, "Kökte .py dosyası yok", ui::font_sans16, t.text);
-      c.text(12, 105, "Dosyalar'da .py oluşturun", ui::font_sans12, t.muted);
-      return;
-    }
-    const int first = selected_ >= 7 ? selected_ - 7 : 0;
-    for (int i = first; i < script_count_ && i < first + 8; ++i) {
-      const int y = 44 + (i - first) * 21;
-      if (i == selected_) c.fill_round_rect(make_rect(5, y, 310, 21), 4, t.select);
-      char line[64];
-      std::snprintf(line, sizeof line, "%.31s · %lu B", scripts_[i].name,
-                    static_cast<unsigned long>(scripts_[i].size));
-      c.text(12, y + 3, line, ui::font_sans12, i == selected_ ? t.accent : t.text);
-    }
-    return;
-  }
-  char heading[96];
-  std::snprintf(heading, sizeof heading, "%s: %s%s", running_,
-                output_.ok ? "Tamam" : "Hata", output_.truncated ? " (kesildi)" : "");
-  c.text(8, 25, heading, ui::font_sans12, output_.ok ? t.text : t.accent);
-  c.fill_rect(make_rect(8, 42, 304, 1), t.line);
-  if (!output_.length) { c.text(10, 55, "(çıktı yok)", ui::font_sans12, t.muted); return; }
-  int line = 0;
-  const char* start = output_.text;
-  for (const char* p = output_.text; ; ++p) {
-    if (*p == '\n' || *p == '\0') {
-      if (line >= scroll_ && line < scroll_ + 9) {
-        const int y = 48 + (line - scroll_) * 18;
-        c.set_clip(make_rect(8, y, 304, 18));
-        c.text(10, y, std::string_view(start, p - start), ui::font_sans12, t.text);
-      }
-      ++line;
-      if (*p == '\0') break;
-      start = p + 1;
-    }
-  }
-  c.set_clip(area);
 }
 
 void PythonApp::soft_keys(SoftKeys& keys) const {

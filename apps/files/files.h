@@ -8,13 +8,23 @@ namespace calctus::apps {
 class FilesApp final : public App {
  public:
   const char* title() const override { return "Dosyalar"; }
+  View view() const override { return View::Files; }
   void on_open() override;
   bool on_key(const KeyEvent& event) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
- private:
   enum class Page { List, Edit, Rename };
+  Page page() const { return page_; }
+  int count() const { return count_; }  // <0: microSD yok
+  const hal::FileInfo& entry(int index) const { return entries_[index]; }
+  int selected() const { return selected_; }
+  const files::Document& document() const { return doc_; }
+  bool dirty() const { return dirty_; }
+  const char* rename_text() const { return rename_; }
+  bool alpha() const { return alpha_; }
+  bool symbol_layer() const { return symbol_; }
+
+ private:
   void refresh();
   void create();
   void open_selected();

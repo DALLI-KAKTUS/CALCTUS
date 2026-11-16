@@ -6,18 +6,20 @@
 `[TASARIM]` uygulanmamış hedef, `[KARAR]` kesinleşmesi gereken ayrıntıdır.
 `[VAR]` ifadesi fiziksel kartta test edildi anlamına **gelmez**.
 
-**LVGL geçişi (devam ediyor):** LVGL v9.4.0 kaynakları `third_party/lvgl/`
-içinde sabittir. Simülatör ve ESP aynı RGB565 kısmi flush, HAL zamanı ve
-LVGL widget ağacını derler. Durum çubuğu, F tuş etiketleri, bildirim, ana
-ekran, Ayarlar ana listesi/Hakkında, Pi Zero 2 bağlantı sayfası, Elementler
-ayrıntı/listesi, Hesap'ın cebirsel/RPN görünümleri, Çözücü, Grafik çizim
-yüzeyi, İstatistik ve genel onay/seçim/kaydırıcı pencereleri LVGL nesneleriyle
-çizilir. Diğer uygulama
-içeriği şimdilik LVGL `canvas` üzerinde eski `ui::Canvas` çizim kodunu
-kullanır; bütün uygulamalar widget'a taşınmış **değildir**. Klavye olayları halen
-`System::dispatch` üzerinden mevcut uygulama yaşam döngüsüne gider; LVGL
-native `indev`/focus/tuş düzenleme ve widget'a çevrilen uygulamalar sonraki
-aşamadır. Mevcut görsel golden paketi güncel arayüzle doğrulanmıştır.
+**LVGL geçişi (tamam, 16 Kasım 2026):** LVGL v9.4.0 kaynakları
+`third_party/lvgl/` içinde sabittir. Simülatör ve ESP aynı RGB565 kısmi flush,
+HAL zamanı ve LVGL widget ağacını derler. Durum çubuğu, F tuş etiketleri,
+bildirim, genel onay/seçim/kaydırıcı pencereleri ve 14 uygulamanın tamamı
+(ana ekran dahil) LVGL nesneleriyle çizilir. Her uygulamanın `App::View`
+değeri vardır; `LvglScreen::content` açık uygulamanın görünümünü durumundan
+baştan kurar. İlk sekiz görünüm `ui/lvgl_screen.cpp`, Olasılık/Diziler/
+Python/Dosyalar/Bileşenler/Tuş testi `ui/lvgl_apps.cpp` içindedir; ortak
+yardımcılar `ui/lvgl_kit`. Eski `ui::Canvas` uygulama yolu, `App::draw` ve
+ikinci çerçeve tamponu (`hal::legacy_framebuffer`) kaldırıldı. `ui::Canvas`
+yalnız simülatör cihaz görünümü ve metin genişliği ölçümü için kalır;
+`ListView`/`TableView` çizim yapmaz, seçim/kaydırma durumu tutar. Klavye
+olayları `System::dispatch` üzerinden uygulama yaşam döngüsüne gider; LVGL
+`indev`/focus grupları kullanılmaz, çünkü 55 tuşun anlamı uygulamaya özgüdür.
 
 ## 1. Ürün ve çalışma modelleri
 
@@ -52,12 +54,11 @@ ESP'nin ekranını elektriksel olarak devralmaz.
 `platform/sim/main.cpp` veya `platform/esp32/main/main.cpp` → `boot()`
 (`kernel/boot.cpp`) → `System::run()` (`kernel/system.cpp`). `boot()` uygulama
 nesnelerini ana ekran kayıtlarına bağlar. Sistem sırasıyla HAL'i başlatır,
-kalıcı ayarları yükler, LVGL v9.4 ekran ağacını ve geçiş uygulamaları için ayrı
-Canvas tamponunu kurar, ana ekranı açar, olay döngüsünde değişen alanları
-LVGL'de geçersiz kılar. `lv_timer_handler` kısmi RGB565 flush callback'iyle
+kalıcı ayarları yükler, LVGL v9.4 ekran ağacını kurar, ana ekranı açar,
+olay döngüsünde değişen bölgede açık uygulamanın LVGL görünümünü yeniden kurar. `lv_timer_handler` kısmi RGB565 flush callback'iyle
 HAL framebuffer'ına yazar; `hal::display_push` paneli günceller.
 `hal::keys_wait` tuş/timer bekler. Uygulamalar `kernel/app.h` arayüzünde
-`on_open`, `on_key`, `draw`, `soft_keys` ve isteğe bağlı periyodik tick sunar.
+`view`, `on_open`, `on_key`, `soft_keys` ve isteğe bağlı periyodik tick sunar.
 Güç/ana ekran gibi sistem tuşları önce `System` tarafından değerlendirilir.
 
 `hal/include/calctus/hal.h` iki platformun sözleşmesidir. Ekran, tuş, zaman,
@@ -70,11 +71,9 @@ SDL, masaüstü dosya sistemi ve işletim sistemine özgü API yoktur; ESP hedef
 
 Mantıksal ekran 320×240 RGB565'tir (GMT020 panel doğal yönü 240×320,
 Kconfig `swap_xy` ile yatay): tam kare 153.600 bayt. ESP'de LVGL çıkış
-framebuffer'ı ve geçiş uygulamaları için ayrı Canvas tamponu PSRAM'de
-(2×153.600 bayt), 16 satırlık LVGL render tamponu ve SPI gönderim satırı
-dahili RAM'dedir. LVGL kısmi flush kirli alanı `display_push` ile gönderir;
-eski uygulama Canvas'ı LVGL `canvas` içeriği olarak çizilir. Bu kalıcı
-widget dönüşümü değildir. Tuş adları ve 8×7 matrisin kaynağı `keymap.def`;
+framebuffer'ı PSRAM'de (153.600 bayt), 16 satırlık LVGL render tamponu ve
+SPI gönderim satırı dahili RAM'dedir. LVGL kısmi flush kirli alanı
+`display_push` ile gönderir. Tuş adları ve 8×7 matrisin kaynağı `keymap.def`;
 simülatör skin/girdi ve TCA8418 eşlemesi bu sırayı paylaşır. Simülatörde
 tuş betikleri sanal zamanda çalışır, golden PNG'ler piksel karşılaştırılır.
 
@@ -194,7 +193,7 @@ uygulamaya özgü metin olaylarıyla daha verimli aktarılır.
 
 **Terminal için öneri `[TASARIM]`:** Pi üzerinde PTY aracılığıyla bir terminal
 oturumu başlat; giriş tuşları USB uygulama kanalıyla Pi'ye, sınırlı UTF-8
-satırları ESP'nin metin Canvas'ına veya Pi sanal yüzeyine aktar. Yeniden
+satırları ESP'nin LVGL metin görünümüne veya Pi sanal yüzeyine aktar. Yeniden
 boyutlandırma, Ctrl/Alt, ANSI kaçışları, scrollback, kesinti ve onaylı shell
 izinleri açıkça tasarlanmalı. Şu an Pi agent hiçbir shell komutu yürütmez;
 terminal/PTY ve Pi HDMI ekran erişimi **çalışmıyor**. SSH'in yerel cihaza mı
@@ -282,7 +281,10 @@ ESP için IDF 5.5.1 ortamında `idf.py -C platform/esp32 -B /özel/build build`.
 Grafik eski fonksiyon örneklemesini (77 örnek, asimptot kopuklukları, pan ve
 zoom) kullanır; grafik yüzeyi/formül/eksen/eğri LVGL nesneleridir.
 
-**En son doğrulama (16 Kasım 2026):** Tam CTest paketi **35/35 geçti**;
+**En son doğrulama (16 Kasım 2026, LVGL geçişi sonrası):** Tam CTest paketi
+**35/35 geçti**; geçirilen ekranların golden görüntüleri eski Canvas
+çıktısıyla yan yana incelenip güncellendi (fark: glif kenar yumuşatması ve ana
+ekrana geri eklenen kaydırma göstergesi);
 İstatistik hedefli testler **3/3 geçti**; `git diff --check` temiz. ESP32-S3
 derlemesi bu değişikliklerden sonra çalıştırılamadı: mevcut ortamda `idf.py`
 bulunmuyor. Önceki ESP imaj boyutları bu sürüm için geçerli doğrulama değildir.

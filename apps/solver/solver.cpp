@@ -3,7 +3,6 @@
 #include <cstring>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -22,19 +21,6 @@ const char* key_text(Key key) {
     case Key::Pow: return "^"; case Key::Sqrt: return "sqrt(";
     case Key::Pi: return "pi"; default: return nullptr;
   }
-}
-
-void result_row(ui::Canvas& c, int y, const char* label, const char* text,
-                const ui::Theme& t) {
-  c.text(8, y, label, ui::font_sans12, t.muted);
-  char compact[128];
-  if (ui::Canvas::text_width(text, ui::font_sans16) > 245 &&
-      math::evaluate("Ans", text, NumberFormat::Scientific, compact, sizeof compact) ==
-          math::Error::None) text = compact;
-  const int width = ui::Canvas::text_width(text, ui::font_sans16);
-  c.set_clip(make_rect(58, y, 254, 20));
-  c.text(307 - width, y, text, ui::font_sans16, t.text);
-  c.set_clip(System::kContent);
 }
 
 }  // namespace
@@ -114,48 +100,6 @@ bool SolverApp::on_key(const KeyEvent& ev) {
     if (text) { append(text); return true; }
   }
   return false;
-}
-
-void SolverApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  c.text(8, 24, "ax² + bx + c = 0", ui::font_sans16, t.text);
-  const char* labels[] = {"a", "b", "c"};
-  for (int i = 0; i < 3; ++i) {
-    const int y = 49 + i * 29;
-    c.text(10, y + 4, labels[i], ui::font_sans16, t.muted);
-    c.box(make_rect(38, y, 273, 26), 4, selected_ == i ? t.accent : t.line,
-          selected_ == i ? t.select : t.surface);
-    c.set_clip(make_rect(44, y + 1, 261, 24));
-    const char* text = *coefficient_[i] ? coefficient_[i] : "_";
-    const int width = ui::Canvas::text_width(text, ui::font_sans16);
-    c.text(303 - width, y + 5, text, ui::font_sans16, t.text);
-    c.set_clip(area);
-  }
-  c.fill_rect(make_rect(0, 140, 320, 1), t.line);
-  if (!has_result_) {
-    c.text(8, 151, "EXE ile çöz", ui::font_sans12, t.muted);
-    return;
-  }
-  switch (result_.kind) {
-    case math::Roots::None:
-      c.text(8, 153, "Çözüm yok", ui::font_sans16, t.text); break;
-    case math::Roots::Any:
-      c.text(8, 153, "Her x çözüm", ui::font_sans16, t.text); break;
-    case math::Roots::Linear: case math::Roots::Double:
-      result_row(c, 154, "x =", result_.first, t);
-      if (result_.kind == math::Roots::Double)
-        c.text(8, 184, "Çift katlı kök", ui::font_sans12, t.muted);
-      break;
-    case math::Roots::Two:
-      result_row(c, 151, "x1 =", result_.first, t);
-      result_row(c, 183, "x2 =", result_.second, t);
-      break;
-    case math::Roots::Complex:
-      result_row(c, 151, "Re =", result_.first, t);
-      result_row(c, 183, "±Im =", result_.second, t);
-      break;
-  }
 }
 
 void SolverApp::soft_keys(SoftKeys& keys) const {

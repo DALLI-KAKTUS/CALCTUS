@@ -13,7 +13,9 @@ set(CALCTUS_CORE_SOURCES
   kernel/keys.cpp
   kernel/boot.cpp
   ui/canvas.cpp
+  ui/lvgl_kit.cpp
   ui/lvgl_screen.cpp
+  ui/lvgl_apps.cpp
   ui/font.cpp
   ui/theme.cpp
   ui/fonts/font_sans12.cpp

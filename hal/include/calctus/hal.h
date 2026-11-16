@@ -26,8 +26,6 @@ void init();
 // Çerçeve belleği: kScreenWidth * kScreenHeight piksel, satır satır.
 // Platform ayırır (ESP32'de PSRAM'de durur).
 Color* framebuffer();
-// LVGL canvas geçiş katmanı: eski uygulama içeriği için ayrı RGB565 tampon.
-Color* legacy_framebuffer();
 
 // Çerçeve belleğinin verilen bölgesini panele gönderir. Yalnız değişen bölge
 // gönderilmelidir: cihazda her piksel SPI üzerinden gider.

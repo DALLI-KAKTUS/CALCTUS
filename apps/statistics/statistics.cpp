@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -24,19 +23,6 @@ const char* key_text(Key key) {
     case Key::Pi: return "pi"; case Key::Ans: return "Ans";
     default: return nullptr;
   }
-}
-
-void row(ui::Canvas& c, int y, const char* label, const char* value,
-         const ui::Theme& theme) {
-  c.text(8, y, label, ui::font_sans12, theme.muted);
-  char compact[128];
-  if (ui::Canvas::text_width(value, ui::font_sans16) > 200 &&
-      math::evaluate("Ans", value, NumberFormat::Scientific, compact, sizeof compact) ==
-          math::Error::None) value = compact;
-  const int width = ui::Canvas::text_width(value, ui::font_sans16);
-  c.set_clip(make_rect(100, y, 210, 20));
-  c.text(307 - width, y, value, ui::font_sans16, theme.text);
-  c.set_clip(System::kContent);
 }
 
 }  // namespace
@@ -110,44 +96,6 @@ bool StatisticsApp::on_key(const KeyEvent& ev) {
     if (text) { append(text); return true; }
   }
   return false;
-}
-
-void StatisticsApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  char count_text[32];
-  std::snprintf(count_text, sizeof count_text, "Veri sayısı: %d / 32", count_);
-  c.text(8, 24, count_text, ui::font_sans12, t.muted);
-  if (page_ == Page::Data) {
-    const int first = count_ > 4 ? count_ - 4 : 0;
-    for (int i = first; i < count_; ++i) {
-      char label[16];
-      std::snprintf(label, sizeof label, "x%d", i + 1);
-      row(c, 49 + (i - first) * 27, label, values_[i], t);
-    }
-    if (!count_) c.text_in(make_rect(10, 55, 300, 60), "Sayı yaz, EXE ile ekle",
-                           ui::font_sans12, t.muted);
-  } else if (!count_) {
-    c.text_in(make_rect(10, 55, 300, 60), "Önce veri ekle", ui::font_sans12, t.muted);
-  } else if (page_ == Page::Mean) {
-    row(c, 55, "Toplam", summary_.sum, t);
-    row(c, 90, "Ortalama", summary_.mean, t);
-  } else if (page_ == Page::Spread) {
-    row(c, 55, "Varyans", summary_.variance, t);
-    row(c, 90, "Std. sapma", summary_.deviation, t);
-    c.text(8, 130, "Popülasyon: n böleni", ui::font_sans12, t.muted);
-  } else {
-    row(c, 55, "En küçük", summary_.minimum, t);
-    row(c, 90, "En büyük", summary_.maximum, t);
-  }
-  c.fill_rect(make_rect(0, 155, 320, 1), t.line);
-  c.text(8, 162, "YENİ DEĞER", ui::font_sans12, t.muted);
-  c.fill_round_rect(make_rect(6, 180, 308, 34), 5, t.surface);
-  const char* text = length_ ? input_ : "0";
-  const int width = ui::Canvas::text_width(text, ui::font_sans16);
-  c.set_clip(make_rect(10, 181, 300, 32));
-  c.text(305 - width, 187, text, ui::font_sans16, length_ ? t.text : t.muted);
-  c.set_clip(area);
 }
 
 void StatisticsApp::soft_keys(SoftKeys& keys) const {

@@ -66,7 +66,6 @@ class System {
   int app_count_ = 0;
   App* home_ = nullptr;
   App* app_ = nullptr;
-  ui::Canvas* canvas_ = nullptr;
   ui::LvglScreen* lvgl_ = nullptr;
   ui::Modal* modal_ = nullptr;
   Settings settings_{};

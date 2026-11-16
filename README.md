@@ -8,11 +8,9 @@ tasarımı, çalışan/eksik özellikler ve kararlar için
 Sıfırdan yazılan bir hesap makinesi sistemi. Hedef donanım ESP32-S3
 (GMT020/ST7789 240×320 panel, yatay 320×240 arayüz, 55 tuş).
 Yazılım önce masaüstü simülatöründe geliştirilir; aynı kaynak kod sonra
-cihaza derlenir. Ekran LVGL v9.4.0 ile RGB565 olarak çizilir. Ana ekran,
-sistem kabuğu, Ayarlar, Pi, Elementler, Hesap/RPN, Çözücü, Grafik, İstatistik
-ve genel pencereler yerel LVGL nesneleridir; diğer uygulamaların bir kısmı
-geçiş süresince LVGL canvas üzerinde eski çizim kodunu kullanır. Donanımda
-görüntü ve tuş eşlemesi henüz fiziksel olarak doğrulanmadı.
+cihaza derlenir. Ekran LVGL v9.4.0 ile RGB565 olarak çizilir; ana ekran,
+sistem kabuğu, bütün uygulamalar ve pencereler yerel LVGL nesneleridir.
+Donanımda görüntü ve tuş eşlemesi henüz fiziksel olarak doğrulanmadı.
 
 Başka bir hesap makinesi yazılımının çatalı ya da kopyası değildir.
 
@@ -155,7 +153,7 @@ Penceresiz modda zaman sanaldır; betikler anında ve her seferinde aynı sonuç
 ```
 hal/include/calctus/   HAL sözleşmesi, tuş tanımları (keymap.def), temel tipler
 kernel/                sistem (ana döngü, ekran düzeni, tuş yönlendirme), uygulama arayüzü, ayarlar
-ui/                    LVGL ekran köprüsü, geçiş Canvas'ı, tema, font ve bileşenler
+ui/                    LVGL görünümleri (lvgl_screen, lvgl_apps, lvgl_kit), tema, font, bileşen durumları
 apps/                  ortak uygulamalar (hesaplama, dosyalar, Python, Pi, sistem)
 math/                  libbf üzerinde taşınabilir ifade ayrıştırıcı
 third_party/libbf/      MIT lisanslı sabitlenmiş libbf kaynakları

@@ -14,7 +14,6 @@ class SolverApp final : public App {
   bool has_result() const { return has_result_; }
   const math::Solution& result() const { return result_; }
   bool on_key(const KeyEvent& ev) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
  private:

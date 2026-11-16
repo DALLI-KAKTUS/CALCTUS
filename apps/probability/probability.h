@@ -8,9 +8,15 @@ namespace calctus::apps {
 class ProbabilityApp final : public App {
  public:
   const char* title() const override { return "Olasılık"; }
+  View view() const override { return View::Probability; }
   bool on_key(const KeyEvent& event) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
+
+  const char* mode_title() const;
+  const char* n() const { return n_; }
+  const char* k() const { return k_; }
+  bool k_selected() const { return selected_k_; }
+  const char* result() const { return result_; }
 
  private:
   void calculate();

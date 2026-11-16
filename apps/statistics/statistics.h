@@ -15,7 +15,6 @@ class StatisticsApp final : public App {
   const char* input() const { return input_; }
   const math::Statistics& summary() const { return summary_; }
   bool on_key(const KeyEvent& ev) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
  private:

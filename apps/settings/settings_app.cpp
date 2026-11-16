@@ -3,7 +3,6 @@
 #include <cstdio>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 
@@ -138,25 +137,6 @@ bool SettingsApp::on_key(const KeyEvent& ev) {
       break;
   }
   return ev.key == Key::Up || ev.key == Key::Down;
-}
-
-void SettingsApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  if (page_ == Page::Main) {
-    list_.draw(c);
-    return;
-  }
-
-  c.fill_rect(area, t.bg);
-  c.text(16, area.y + 14, "CALCTUS", ui::font_sans24, t.accent);
-  char buf[64];
-  std::snprintf(buf, sizeof buf, "Sürüm %s", kVersion);
-  c.text(16, area.y + 50, buf, ui::font_sans12, t.text);
-  c.text(16, area.y + 68, "Ekran 320×240 · 55 tuş", ui::font_sans12, t.text);
-  c.text_wrapped(make_rect(16, area.y + 96, area.w - 32, 80),
-                 "Sıfırdan yazılan açık kaynak hesap makinesi sistemi. Aynı kod masaüstü "
-                 "simülatöründe ve ESP32-S3 üzerinde çalışır.",
-                 ui::font_sans12, t.muted);
 }
 
 void SettingsApp::soft_keys(SoftKeys& keys) const {

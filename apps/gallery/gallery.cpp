@@ -3,7 +3,6 @@
 #include <cstdio>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 
@@ -187,39 +186,6 @@ bool GalleryApp::on_key(const KeyEvent& ev) {
       return false;
   }
   return false;
-}
-
-void GalleryApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  switch (page_) {
-    case Page::Menu:
-      menu_.draw(c);
-      break;
-    case Page::LongList:
-      long_list_.draw(c);
-      break;
-    case Page::Table:
-      table_.draw(c);
-      break;
-    case Page::Fonts: {
-      c.fill_rect(area, t.bg);
-      int y = area.y + 8;
-      c.text(10, y, "24 px  Pijamalı hasta", ui::font_sans24, t.text);
-      y += 34;
-      c.text(10, y, "16 px  yağız şoföre çabucak güvendi", ui::font_sans16, t.text);
-      y += 26;
-      c.text(10, y, "12 px  ÇĞİÖŞÜ çğıöşü 0123456789 +−×÷=≠≈", ui::font_sans12, t.text);
-      y += 20;
-      c.text(10, y, "√2 · π ≈ 4,4429  ∫ f(x) dx  ∑ n²  x² + y² = r²", ui::font_sans12, t.text);
-      y += 20;
-      c.text(10, y, "α β γ δ θ λ μ σ φ ω  Δ Σ Ω  ← → ↑ ↓  ½ ¼ ¾", ui::font_sans12, t.text);
-      y += 26;
-      c.text(10, y, "sin²θ + cos²θ = 1", ui::font_sans16, t.accent);
-      y += 26;
-      c.text(10, y, "Geri: menüye dön", ui::font_sans12, t.muted);
-      break;
-    }
-  }
 }
 
 void GalleryApp::soft_keys(SoftKeys&) const {}

@@ -43,7 +43,6 @@ constexpr uint8_t kRegKeypad1 = 0x1d;
 constexpr uint8_t kRegKeypad2 = 0x1e;
 
 Color* fb = nullptr;
-Color* legacy_fb = nullptr;
 uint8_t* dma_line = nullptr;
 esp_lcd_panel_handle_t panel = nullptr;
 SemaphoreHandle_t transfer_done = nullptr;
@@ -243,11 +242,9 @@ bool fetch_key(KeyEvent& out) {
 void init() {
   fb = static_cast<Color*>(heap_caps_calloc(kScreenWidth * kScreenHeight,
                                               sizeof(Color), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
-  legacy_fb = static_cast<Color*>(heap_caps_calloc(kScreenWidth * kScreenHeight,
-                                              sizeof(Color), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
   dma_line = static_cast<uint8_t*>(heap_caps_malloc(kScreenWidth * 2,
                                                      MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL));
-  if (!fb || !legacy_fb || !dma_line) ESP_ERROR_CHECK(ESP_ERR_NO_MEM);
+  if (!fb || !dma_line) ESP_ERROR_CHECK(ESP_ERR_NO_MEM);
   init_panel();
   init_i2c();
   nvs_ready = nvs_flash_init() == ESP_OK;
@@ -268,7 +265,6 @@ void init() {
 }
 
 Color* framebuffer() { return fb; }
-Color* legacy_framebuffer() { return legacy_fb; }
 
 void display_push(Rect area) {
   area = intersect(area, make_rect(0, 0, kScreenWidth, kScreenHeight));

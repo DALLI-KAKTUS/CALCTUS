@@ -4,7 +4,6 @@
 #include <cstring>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -30,6 +29,8 @@ char digit_for(Key key) {
 }
 
 }  // namespace
+
+const char* ProbabilityApp::mode_title() const { return mode_name(operation_); }
 
 void ProbabilityApp::select(bool k) {
   selected_k_ = k;
@@ -110,34 +111,6 @@ bool ProbabilityApp::on_key(const KeyEvent& event) {
     return true;
   }
   return false;
-}
-
-void ProbabilityApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  c.text(8, 25, mode_name(operation_), ui::font_sans16, t.text);
-  c.text(8, 57, "n =", ui::font_sans16, t.text);
-  c.text(8, 89, "k =", ui::font_sans16, t.text);
-  const Rect n_box = make_rect(50, 53, 260, 27);
-  const Rect k_box = make_rect(50, 85, 260, 27);
-  c.box(n_box, 4, selected_k_ ? t.line : t.accent, selected_k_ ? t.surface : t.select);
-  c.box(k_box, 4, selected_k_ ? t.accent : t.line, selected_k_ ? t.select : t.surface);
-  c.text(58, 57, *n_ ? n_ : "_", ui::font_sans16, t.text);
-  c.text(58, 89, *k_ ? k_ : "_", ui::font_sans16, t.text);
-  c.fill_rect(make_rect(0, 120, 320, 1), t.line);
-  c.text(8, 126, "SONUÇ (TAM SAYI)", ui::font_sans12, t.muted);
-  if (!*result_) {
-    c.text(8, 148, "EXE ile hesapla", ui::font_sans12, t.muted);
-    return;
-  }
-  const size_t length = std::strlen(result_);
-  for (size_t start = 0; start < length; start += 32) {
-    char line[33];
-    const size_t count = length - start < 32 ? length - start : 32;
-    std::memcpy(line, result_ + start, count);
-    line[count] = '\0';
-    c.text(8, 148 + static_cast<int>(start / 32) * 19, line, ui::font_sans12, t.text);
-  }
 }
 
 void ProbabilityApp::soft_keys(SoftKeys& keys) const {

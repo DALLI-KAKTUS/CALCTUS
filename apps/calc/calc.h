@@ -16,7 +16,6 @@ class CalcApp final : public App {
   int stack_size() const { return stack_size_; }
   const char* stack_value(int index) const { return stack_[index]; }
   bool on_key(const KeyEvent& ev) override;
-  void draw(ui::Canvas& canvas, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
 
  private:

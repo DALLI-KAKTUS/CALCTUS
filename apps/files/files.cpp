@@ -2,10 +2,8 @@
 
 #include <cstdio>
 #include <cstring>
-#include <string_view>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -253,64 +251,6 @@ bool FilesApp::on_key(const KeyEvent& event) {
   } else c = literal(event.key);
   if (c) { append(c, event); return true; }
   return false;
-}
-
-void FilesApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  if (page_ == Page::List) {
-    if (count_ < 0) {
-      c.text(12, 54, "microSD kart bağlı değil", ui::font_sans16, t.text);
-      c.text(12, 87, "Kartı takıp F5 ile yenile", ui::font_sans12, t.muted);
-      return;
-    }
-    c.text(8, 24, "microSD / (en çok 32 giriş)", ui::font_sans12, t.muted);
-    const int first = selected_ >= 6 ? selected_ - 6 : 0;
-    for (int i = first; i <= count_ && i < first + 7; ++i) {
-      const int y = 43 + (i - first) * 24;
-      if (i == selected_) c.fill_round_rect(make_rect(5, y, 310, 23), 4, t.select);
-      char label[64];
-      if (i == count_) std::snprintf(label, sizeof label, "+ Yeni belge");
-      else std::snprintf(label, sizeof label, "%s (%lu B)", entries_[i].name,
-                         static_cast<unsigned long>(entries_[i].size));
-      c.text(12, y + 5, label, ui::font_sans12, i == selected_ ? t.accent : t.text);
-    }
-    return;
-  }
-  if (page_ == Page::Rename) {
-    c.text(8, 29, "BELGE ADI (en çok 31 karakter)", ui::font_sans12, t.muted);
-    c.box(make_rect(8, 57, 304, 31), 4, t.accent, t.surface);
-    c.set_clip(make_rect(12, 58, 296, 29));
-    c.text(15, 64, rename_, ui::font_sans16, t.text);
-    c.set_clip(area);
-    c.text(8, 106, "EXE kaydet · F6 iptal", ui::font_sans12, t.muted);
-    return;
-  }
-  char header[64];
-  std::snprintf(header, sizeof header, "%s%s · %u/4095", doc_.name, dirty_ ? "*" : "",
-                static_cast<unsigned>(doc_.length));
-  c.text(8, 23, header, ui::font_sans12, t.text);
-  c.fill_rect(make_rect(8, 42, 304, 1), t.line);
-  size_t starts[9]{};
-  int count = 1;
-  for (size_t i = 0; i < doc_.length; ++i) if (doc_.text[i] == '\n') {
-    if (count < 9) starts[count++] = i + 1;
-    else { for (int j = 1; j < 9; ++j) starts[j - 1] = starts[j];
-           starts[8] = i + 1; }
-  }
-  for (int line = 0; line < count; ++line) {
-    const size_t start = starts[line];
-    size_t end = start;
-    while (end < doc_.length && doc_.text[end] != '\n') ++end;
-    const std::string_view text(doc_.text + start, end - start);
-    const int width = ui::Canvas::text_width(text, ui::font_sans12);
-    c.set_clip(make_rect(8, 47 + line * 17, 304, 17));
-    c.text(width > 300 ? 308 - width : 10, 48 + line * 17, text, ui::font_sans12, t.text);
-  }
-  c.set_clip(area);
-  c.text(8, 203, symbol_ ? "FN: 1=: 3=' 0=boşluk" :
-                    alpha_ ? "Harf: 2=abc 3=def · Sağ: sabitle" :
-                             "Rakam · ALPHA: harf · FN: simge", ui::font_sans12, t.muted);
 }
 
 void FilesApp::soft_keys(SoftKeys& keys) const {

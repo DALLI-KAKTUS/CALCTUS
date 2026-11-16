@@ -8,8 +8,8 @@ namespace calctus::apps {
 class HomeApp final : public App {
  public:
   const char* title() const override { return "CALCTUS"; }
+  View view() const override { return View::Home; }
   bool on_key(const KeyEvent& ev) override;
-  void draw(ui::Canvas& c, Rect area) override;
   void soft_keys(SoftKeys& keys) const override;
   int selected() const { return sel_; }
   int top_row() const { return top_row_; }

@@ -1,9 +1,10 @@
 // Liste: tuşla gezilen, kaydırılabilen satırlar.
 // Satırları sahibi bir ListModel üzerinden verir; liste veri kopyalamaz.
+// Yalnız seçim ve kaydırma durumunu tutar; çizimi LVGL görünümü yapar.
 #pragma once
 
 #include "calctus/keys.h"
-#include "ui/canvas.h"
+#include "calctus/types.h"
 
 namespace calctus::ui {
 
@@ -35,8 +36,11 @@ class ListView {
   void setup(const ListModel* model, Rect bounds, bool on_surface = false);
   Rect bounds() const { return bounds_; }
 
+  const ListModel* model() const { return model_; }
+  bool on_surface() const { return on_surface_; }
   int selected() const { return sel_; }
   int first_visible() const { return top_; }
+  int visible_rows() const { return bounds_.h / kRowH; }
   void select(int index);
 
   // Yukarı/aşağı seçimi taşır; OK ya da EXE etkinleştirir.
@@ -45,10 +49,7 @@ class ListView {
   Rect damage() const { return damage_; }
   Rect row_rect(int index) const;
 
-  void draw(Canvas& c) const;
-
  private:
-  int visible_rows() const { return bounds_.h / kRowH; }
   void scroll_to_selection();
 
   const ListModel* model_ = nullptr;

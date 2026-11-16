@@ -5,7 +5,6 @@
 #include <cstring>
 
 #include "kernel/system.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -29,14 +28,6 @@ const char* key_text(Key key) {
     case Key::Log: return "log("; case Key::Exp: return "exp(";
     default: return nullptr;
   }
-}
-
-void clipped_value(ui::Canvas& c, Rect box, const char* text,
-                   const ui::Font& font, Color color) {
-  c.set_clip(box);
-  const int width = ui::Canvas::text_width(text, font);
-  c.text(box.right() - 5 - width, box.y + (box.h - font.line_height) / 2, text, font, color);
-  c.set_clip(System::kContent);
 }
 
 }  // namespace
@@ -119,44 +110,6 @@ bool SequencesApp::on_key(const KeyEvent& ev) {
     if (text) { append(text); return true; }
   }
   return false;
-}
-
-void SequencesApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  c.text(8, 24, mode_ == math::SequenceMode::Explicit ?
-         "Açık: u(n) = f(n)" : "Yineleme: u(0), u(n)=f(n,Ans)",
-         ui::font_sans12, t.text);
-  const char* names[] = {"f(n)", "u(0)", "İlk n"};
-  const char* values[] = {formula_, initial_, first_};
-  for (int i = 0; i < 3; ++i) {
-    const int y = 42 + i * 27;
-    c.text(8, y + 5, names[i], ui::font_sans12, t.muted);
-    const Rect box = make_rect(62, y, 250, 24);
-    c.box(box, 4, selected_ == i ? t.accent : t.line,
-          selected_ == i ? t.select : t.surface);
-    clipped_value(c, make_rect(66, y + 1, 242, 22), *values[i] ? values[i] : "_",
-                  ui::font_sans12, t.text);
-  }
-  c.fill_rect(make_rect(0, 125, 320, 1), t.line);
-  c.text(8, 127, "n", ui::font_sans12, t.muted);
-  c.text(65, 127, "u(n)", ui::font_sans12, t.muted);
-  if (!has_rows_) {
-    c.text(65, 159, "F6/EXE ile hesapla", ui::font_sans12, t.muted);
-    return;
-  }
-  const unsigned first = static_cast<unsigned>(std::strtoul(first_, nullptr, 10));
-  for (int i = 0; i < 5; ++i) {
-    const int y = 144 + i * 15;
-    char index[12], compact[128];
-    std::snprintf(index, sizeof index, "%u", first + static_cast<unsigned>(i));
-    c.text(8, y, index, ui::font_sans12, t.muted);
-    const char* value = rows_[i];
-    if (ui::Canvas::text_width(value, ui::font_sans12) > 230 &&
-        math::evaluate("Ans", value, NumberFormat::Scientific, compact, sizeof compact) ==
-            math::Error::None) value = compact;
-    clipped_value(c, make_rect(65, y, 245, 15), value, ui::font_sans12, t.text);
-  }
 }
 
 void SequencesApp::soft_keys(SoftKeys& keys) const {

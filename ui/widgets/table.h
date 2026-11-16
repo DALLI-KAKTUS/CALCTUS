@@ -1,8 +1,9 @@
-// Tablo: başlık satırı ve tuşla gezilen hücreler.
+// Tablo: başlık satırı ve tuşla gezilen hücreler. Yalnız durum tutar;
+// çizimi LVGL görünümü yapar.
 #pragma once
 
 #include "calctus/keys.h"
-#include "ui/canvas.h"
+#include "calctus/types.h"
 
 namespace calctus::ui {
 
@@ -24,18 +25,19 @@ class TableView {
 
   void setup(const TableModel* model, Rect bounds);
 
+  const TableModel* model() const { return model_; }
+  Rect bounds() const { return bounds_; }
   int row() const { return row_; }
   int col() const { return col_; }
+  int first_visible() const { return top_; }
+  int visible_rows() const { return bounds_.h / kRowH - 1; }
+  Rect cell_rect(int row, int col) const;
 
   // Ok tuşları seçili hücreyi taşır. Tuş işlendiyse true.
   bool on_key(const KeyEvent& ev);
   Rect damage() const { return damage_; }
 
-  void draw(Canvas& c) const;
-
  private:
-  int visible_rows() const { return bounds_.h / kRowH - 1; }
-  Rect cell_rect(int row, int col) const;
 
   const TableModel* model_ = nullptr;
   Rect bounds_{};

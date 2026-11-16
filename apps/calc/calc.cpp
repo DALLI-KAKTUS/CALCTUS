@@ -5,7 +5,6 @@
 
 #include "kernel/system.h"
 #include "math/eval.h"
-#include "ui/theme.h"
 
 namespace calctus::apps {
 namespace {
@@ -29,13 +28,6 @@ const char* key_text(Key key) {
     case Key::Exp: return "exp("; case Key::Xnt: return "x";
     default: return nullptr;
   }
-}
-
-void right_text(ui::Canvas& c, Rect rect, const char* text, const ui::Font& font, Color color) {
-  const int width = ui::Canvas::text_width(text, font);
-  c.set_clip(rect);
-  c.text(rect.right() - 5 - width, rect.y + (rect.h - font.line_height) / 2, text, font, color);
-  c.set_clip(System::kContent);
 }
 
 }  // namespace
@@ -250,37 +242,6 @@ bool CalcApp::on_key(const KeyEvent& ev) {
     if (text) { insert(text); return true; }
   }
   return false;
-}
-
-void CalcApp::draw(ui::Canvas& c, Rect area) {
-  const ui::Theme& t = ui::theme();
-  c.fill_rect(area, t.bg);
-  if (rpn_) {
-    c.text(8, 24, "YIĞIN", ui::font_sans12, t.muted);
-    for (int i = 0; i < stack_size_; ++i) {
-      const int y = 43 + (3 - i) * 27;
-      char label[16]; std::snprintf(label, sizeof label, "%d:", i + 1);
-      c.text(8, y, label, ui::font_sans12, t.muted);
-      right_text(c, make_rect(34, y, 278, 20), stack_[i], ui::font_sans16, t.text);
-    }
-    c.fill_rect(make_rect(0, 155, 320, 1), t.line);
-    c.text(8, 162, "GİRİŞ", ui::font_sans12, t.muted);
-    c.fill_round_rect(make_rect(6, 180, 308, 34), 5, t.surface);
-    right_text(c, make_rect(10, 181, 300, 32), length_ ? input_ : "0",
-               ui::font_sans16, length_ ? t.text : t.muted);
-    return;
-  }
-  c.text(8, 24, "GEÇMİŞ", ui::font_sans12, t.muted);
-  for (int i = history_count_ - 1; i >= 0; --i) {
-    const int y = 43 + (history_count_ - 1 - i) * 35;
-    right_text(c, make_rect(8, y, 304, 15), history_[i].expression, ui::font_sans12, t.muted);
-    right_text(c, make_rect(8, y + 15, 304, 19), history_[i].result, ui::font_sans16, t.text);
-  }
-  c.fill_rect(make_rect(0, 155, 320, 1), t.line);
-  c.text(8, 162, "İFADE", ui::font_sans12, t.muted);
-  c.fill_round_rect(make_rect(6, 180, 308, 34), 5, t.surface);
-  right_text(c, make_rect(10, 181, 300, 32), length_ ? input_ : "0",
-             ui::font_sans16, length_ ? t.text : t.muted);
 }
 
 void CalcApp::soft_keys(SoftKeys& keys) const {
