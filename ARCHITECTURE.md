@@ -307,9 +307,11 @@ yeterli mi, yoksa HDMI masaüstünün aynısı şart mı? (2) Pi terminali yerel
 mi yoksa SSH istemcisi mi; shell için izin/tehdit modeli? (3) Wi‑Fi
 şifresinin *bir kez aktarılması* mı yoksa gerçekten *tek internet uplink*
 paylaşılması mı isteniyor? (4) gerçek PCB GPIO'ları, USB OTG port erişimi,
-ayrı Pi güç bütçesi/anahtarlama ve güç kapatma yöntemi? (5) AI sağlayıcı,
-endpoint, model, ağ ve API anahtarı saklama ilkesi? Kimlik bilgileri repoya
-yazılmamalı.
+ayrı Pi güç bütçesi/anahtarlama ve güç kapatma yöntemi? (5) AI: tasarım ve
+alınmış ilkeler vault'taki *CALCTUS AI* notunda (API anahtarları cihazda,
+sağlayıcıya doğrudan HTTPS; Hermes'e SSH tüneli içinden API). Açık olanlar
+varsayılan sağlayıcı/model ve anahtar saklamanın ayrıntısı. Kimlik bilgileri
+repoya yazılmamalı.
 
 **Sıradaki teknik kilometre taşları:**
 
